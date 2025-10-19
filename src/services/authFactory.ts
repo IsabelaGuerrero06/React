@@ -4,7 +4,7 @@ import { AuthProvider, OAuthConfig } from '../../types/authTypes';
 import { IAuthProvider } from './providers/baseProvider';
 import { GoogleAuthProvider } from './providers/googleProvider';
 import { MicrosoftAuthProvider } from './providers/microsoftProvider';
-import { GitHubAuthProvider } from './providers/githubProvider';
+import { GitHubAuthProvider } from './provider/githubProvider';
 
 /**
  * Factory para crear instancias de proveedores de autenticación OAuth
