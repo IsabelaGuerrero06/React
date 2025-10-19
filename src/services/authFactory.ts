@@ -1,10 +1,10 @@
 // src/services/auth/authFactory.ts
 
-import { AuthProvider, OAuthConfig } from '../../types/authTypes';
-import { IAuthProvider } from './providers/baseProvider';
-import { GoogleAuthProvider } from './providers/googleProvider';
-import { MicrosoftAuthProvider } from './providers/microsoftProvider';
-import { GitHubAuthProvider } from './providers/githubProvider';
+import { AuthProvider, OAuthConfig } from '../types/authTypes';
+import { IAuthProvider } from './auth/provider/baseProvider';
+import { GoogleAuthProvider } from './auth/provider/googleProvider';
+import { MicrosoftAuthProvider } from './auth/provider/microsoftProvider';
+import { GitHubAuthProvider } from './auth/provider/githubProvider';
 
 /**
  * Factory para crear instancias de proveedores de autenticación OAuth
