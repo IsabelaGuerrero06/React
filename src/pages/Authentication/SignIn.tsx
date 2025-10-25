@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { useSignIn } from '../../hooks/auth/useSingIn';
 import { useSocialAuth } from '../../hooks/auth/useSocialAuth';
 import SignInButton from '../../components/SignInButton';
-import SocialSignInButton from '../../components/SocialSingInButton';
+import SocialSignInButton from '../../components/SocialSignInButton';
 import { AuthProvider } from '../../types/authTypes';
 import { getOAuthConfig, uiConfig } from '../../config/authConfig';
 import { validateEmail } from '../../utils/auth/authValidators';

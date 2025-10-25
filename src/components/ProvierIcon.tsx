@@ -1,6 +1,5 @@
 import React from 'react';
-
-export type AuthProvider = 'google' | 'microsoft' | 'apple';
+import { AuthProvider } from '../types/authTypes';
 
 interface ProviderIconProps {
   provider: AuthProvider;
@@ -8,10 +7,10 @@ interface ProviderIconProps {
   size?: number;
 }
 
-const ProviderIcon: React.FC<ProviderIconProps> = ({ 
-  provider, 
-  className = '', 
-  size = 20 
+const ProviderIcon: React.FC<ProviderIconProps> = ({
+  provider,
+  className = '',
+  size = 20,
 }) => {
   const iconStyle = {
     width: size,
@@ -19,7 +18,7 @@ const ProviderIcon: React.FC<ProviderIconProps> = ({
   };
 
   switch (provider) {
-    case 'google':
+    case AuthProvider.GOOGLE:
       return (
         <svg
           style={iconStyle}
@@ -46,7 +45,7 @@ const ProviderIcon: React.FC<ProviderIconProps> = ({
         </svg>
       );
 
-    case 'microsoft':
+    case AuthProvider.MICROSOFT:
       return (
         <svg
           style={iconStyle}
@@ -61,16 +60,15 @@ const ProviderIcon: React.FC<ProviderIconProps> = ({
         </svg>
       );
 
-    case 'apple':
+    case AuthProvider.GITHUB:
       return (
         <svg
           style={iconStyle}
           className={className}
-          viewBox="0 0 24 24"
+          viewBox="0 0 16 16"
           xmlns="http://www.w3.org/2000/svg"
-          fill="currentColor"
         >
-          <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+          <path d="M8 0C3.58 0 0 3.64 0 8.14c0 3.59 2.29 6.63 5.47 7.7.4.07.55-.18.55-.39v-1.38c-2.23.49-2.7-1.1-2.7-1.1-.36-.94-.9-1.19-.9-1.19-.73-.51.05-.5.05-.5.81.06 1.24.84 1.24.84.72 1.25 1.88.89 2.34.68.07-.53.28-.89.5-1.1-1.78-.21-3.65-.91-3.65-4.06 0-.9.32-1.63.84-2.21-.08-.21-.37-1.06.08-2.2 0 0 .7-.23 2.3.87.67-.19 1.38-.28 2.1-.28s1.43.1 2.1.28c1.6-1.1 2.3-.87 2.3-.87.45 1.14.16 1.99.08 2.2.52.58.84 1.32.84 2.21 0 3.16-1.88 3.84-3.67 4.05.29.26.54.77.54 1.55v2.3c0 .22.15.46.55.39C13.71 14.77 16 11.73 16 8.14 16 3.64 12.42 0 8 0z" />
         </svg>
       );
 
