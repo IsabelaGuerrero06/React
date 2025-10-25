@@ -30,5 +30,14 @@ export const updateProfile = async (profileId: number, data: FormData) => {
   } catch (error) {
     console.error("Error al actualizar el perfil:", error);
     throw error;
+  }};
+
+export const deleteProfile = async (profileId: number) => {
+  try {
+    const response = await axios.delete(`${API_URL}/profiles/${profileId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error al eliminar el perfil:", error);
+    throw error;
   }
 };

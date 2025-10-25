@@ -1,4 +1,3 @@
-// src/components/ProfileForm.tsx
 import React, { useState } from 'react';
 import { Profile } from '../models/Profile';
 import { createProfile, updateProfile } from '../services/ProfileService';
@@ -76,7 +75,7 @@ const ProfileForm: React.FC<Props> = ({ userId, initialProfile, onSaved }) => {
 
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          Teléfono
+          TelÃ©fono
         </label>
         <input
           type="text"
@@ -89,7 +88,7 @@ const ProfileForm: React.FC<Props> = ({ userId, initialProfile, onSaved }) => {
 
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          Dirección
+          DirecciÃ³n
         </label>
         <input
           type="text"
@@ -102,7 +101,7 @@ const ProfileForm: React.FC<Props> = ({ userId, initialProfile, onSaved }) => {
 
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          Sobre mí
+          Sobre mÃ­
         </label>
         <textarea
           name="about"

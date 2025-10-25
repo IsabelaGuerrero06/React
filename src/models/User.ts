@@ -1,14 +1,16 @@
 import { Session } from "./Session";
+import { Device } from "./Device";
+import { DigitalSignature } from "./DigitalSignature";
+import { Answer } from "./Answer";
 
 export interface User {
-    id?: number;
-    name?: string;
-    email?: string;
-    password?:string;
-    age?: number;
-    city?: string;
-    phone?: string;
-    is_active?: boolean;
-    token?:string;
-    session?:Session[];
+  id?: number;
+  name?: string;
+  email?: string;
+  
+  // Relaciones
+  session?: Session[];
+  devices?: Device[];
+  digitalSignature?: DigitalSignature;
+  answers?: Answer[];
 }

@@ -1,6 +1,6 @@
 export interface Profile {
   id?: number;
-  userId: number;          // relación 1:1 con User
+  userId: number;          // relaciÃ³n 1:1 con User
   fullName: string;
   phone: string;
   address: string;

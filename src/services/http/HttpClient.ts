@@ -1,4 +1,4 @@
-// src/services/http/HttpClient.ts
+//Este archivo centraliza todas las peticiones HTTP
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 
 class HttpClient {

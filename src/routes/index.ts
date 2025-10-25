@@ -5,19 +5,43 @@ import UsersRoles from '../pages/Users/Roles';
 import CreateUser from '../pages/Users/Create';
 import UpdateUser from '../pages/Users/Update';
 import Permissions from '../pages/Permissions'; 
+import AnswerList from '../pages/Answers/AnswerList';
+import CreateAnswer from '../pages/Answers/CreateAnswer';
+import UpdateAnswer from '../pages/Answers/UpdateAnswer';
+import UserSessions from "../pages/UserSessions";
+
+// 📦 Import lazy para los perfiles
+const Profile = lazy(() => import('../pages/Profiles/Profile'));
+const CreateProfile = lazy(() => import('../pages/Profiles/CreateProfile'));
+const UpdateProfile = lazy(() => import('../pages/Profiles/UpdateProfile'));
+const DeleteProfile = lazy(() => import('../pages/Profiles/DeleteProfile'));
 
 const Calendar = lazy(() => import('../pages/Calendar'));
 const Chart = lazy(() => import('../pages/Chart'));
 const FormElements = lazy(() => import('../pages/Form/FormElements'));
 const FormLayout = lazy(() => import('../pages/Form/FormLayout'));
-const Profile = lazy(() => import('../pages/Profile'));
 const Settings = lazy(() => import('../pages/Settings'));
 const Tables = lazy(() => import('../pages/Tables'));
 const Alerts = lazy(() => import('../pages/UiElements/Alerts'));
 const Buttons = lazy(() => import('../pages/UiElements/Buttons'));
-const Demo= lazy(() => import('../pages/Demo'));
+const Demo = lazy(() => import('../pages/Demo'));
 
 const coreRoutes = [
+  {
+    path: '/answers/create',
+    title: 'Create Answers',
+    component: CreateAnswer,
+  },
+  {
+    path: '/answers/update/:id',
+    title: 'Update Answers',
+    component: UpdateAnswer,
+  },
+  {
+    path: '/answers/list',
+    title: 'List Answers',
+    component: AnswerList,
+  },
   {
     path: '/users/roles',
     title: 'Users Roles',
@@ -44,6 +68,11 @@ const coreRoutes = [
     component: Permissions,            
   }, 
   {
+    path: "/sessions/user",
+    title: "User Sessions",
+    component: UserSessions,
+  },
+  {
     path: '/demo',
     title: 'Demo',
     component: Demo,
@@ -59,10 +88,30 @@ const coreRoutes = [
     component: Profile,
   },
   {
-  path: '/profile/:id',
-  title: 'Profile Details',
-  component: Profile,
-},
+    path: '/profile/:id',
+    title: 'Profile Details',
+    component: Profile,
+  },
+  {
+    path: '/profiles/user/:id',
+    title: 'User Profile',
+    component: Profile,
+  },
+  {
+    path: '/profiles/create/:id',
+    title: 'Create Profile',
+    component: CreateProfile,
+  },
+  {
+    path: '/profiles/edit/:id',
+    title: 'Edit Profile',
+    component: UpdateProfile,
+  },
+  {
+    path: '/profiles/delete/:id',
+    title: 'Delete Profile',
+    component: DeleteProfile,
+  },
   {
     path: '/forms/form-elements',
     title: 'Forms Elements',
