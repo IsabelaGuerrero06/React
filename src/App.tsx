@@ -7,6 +7,7 @@ import SignUp from './pages/Authentication/SignUp';
 import Loader from './common/Loader';
 import routes from './routes';
 
+
 const DefaultLayout = lazy(() => import('./layout/DefaultLayout'));
 
 function App() {
