@@ -5,14 +5,14 @@ import { Answer } from "../../models/Answer";
 import { useEffect, useState } from "react";
 import GenericTable from "../../components/GenericTable";
 
-const AnswerList: React.FC = () => {
+const ListAnswer: React.FC = () => {
   const [answers, setAnswers] = useState<Answer[]>([]);
   const navigate = useNavigate();
 
   // Cargar respuestas
   const fetchData = async () => {
     try {
-      const data = await answerService.getAll();
+      const data = await answerService.getAnswers();
       setAnswers(data);
     } catch (error) {
       console.error("Error al cargar las respuestas:", error);
@@ -83,4 +83,4 @@ const AnswerList: React.FC = () => {
   );
 };
 
-export default AnswerList;
+export default ListAnswer;
