@@ -1,11 +1,11 @@
 import { List, User } from 'lucide-react';
 import { lazy } from 'react';
-import ListUsers from '../pages/Users/List';
+import ListUsers from '../pages/Users/ListUser';
 import UsersRoles from '../pages/Users/Roles';
-import CreateUser from '../pages/Users/Create';
-import UpdateUser from '../pages/Users/Update';
+import CreateUser from '../pages/Users/CreateUser';
+import UpdateUser from '../pages/Users/UpdateUser';
 import Permissions from '../pages/Permissions'; 
-import AnswerList from '../pages/Answers/AnswerList';
+import ListAnswer from '../pages/Answers/ListAnswer';
 import CreateAnswer from '../pages/Answers/CreateAnswer';
 import UpdateAnswer from '../pages/Answers/UpdateAnswer';
 import UserSessions from "../pages/UserSessions";
@@ -40,7 +40,7 @@ const coreRoutes = [
   {
     path: '/answers/list',
     title: 'List Answers',
-    component: AnswerList,
+    component: ListAnswer,
   },
   {
     path: '/users/roles',

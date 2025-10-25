@@ -5,7 +5,7 @@ import { Answer } from "../../models/Answer";
 import { useEffect, useState } from "react";
 import GenericTable from "../../components/GenericTable";
 
-const AnswerList: React.FC = () => {
+const ListAnswer: React.FC = () => {
   const [answers, setAnswers] = useState<Answer[]>([]);
   const navigate = useNavigate();
 
@@ -83,4 +83,4 @@ const AnswerList: React.FC = () => {
   );
 };
 
-export default AnswerList;
+export default ListAnswer;
