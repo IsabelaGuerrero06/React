@@ -1,5 +1,6 @@
 import React from 'react';
-import ProviderIcon, { AuthProvider } from './ProvierIcon.tsx';
+import ProviderIcon from './ProvierIcon.tsx';
+import { AuthProvider } from '../types/authTypes';
 
 interface SocialSignInButtonProps {
   provider: AuthProvider;
@@ -21,26 +22,26 @@ const SocialSignInButton: React.FC<SocialSignInButtonProps> = ({
   size = 'md',
 }) => {
   const providerLabels: Record<AuthProvider, string> = {
-    google: 'Google',
-    microsoft: 'Microsoft',
-    apple: 'Apple',
-  };
+    [AuthProvider.GOOGLE]: 'Google',
+    [AuthProvider.MICROSOFT]: 'Microsoft',
+    [AuthProvider.GITHUB]: 'GitHub',
+  } as Record<AuthProvider, string>;
 
   const providerStyles: Record<AuthProvider, string> = {
-    google: `
+    [AuthProvider.GOOGLE]: `
       bg-white text-gray-700 border-2 border-gray-300
       hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100
       focus:ring-blue-500
     `,
-    microsoft: `
+    [AuthProvider.MICROSOFT]: `
       bg-white text-gray-700 border-2 border-gray-300
       hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100
       focus:ring-blue-500
     `,
-    apple: `
-      bg-black text-white border-2 border-black
-      hover:bg-gray-900 active:bg-gray-800
-      focus:ring-gray-500
+    [AuthProvider.GITHUB]: `
+      bg-white text-gray-700 border-2 border-gray-300
+      hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100
+      focus:ring-blue-500
     `,
   };
 
@@ -99,7 +100,11 @@ const SocialSignInButton: React.FC<SocialSignInButtonProps> = ({
             />
           </svg>
         ) : (
-          <ProviderIcon provider={provider} className="mr-3" size={iconSizes[size]} />
+          <ProviderIcon
+            provider={provider}
+            className="mr-3"
+            size={iconSizes[size]}
+          />
         )}
         <span>Continuar con {providerLabels[provider]}</span>
       </span>
