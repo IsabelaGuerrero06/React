@@ -5,6 +5,10 @@ import UsersRoles from '../pages/Users/Roles';
 import CreateUser from '../pages/Users/Create';
 import UpdateUser from '../pages/Users/Update';
 import Permissions from '../pages/Permissions'; 
+import AnswerList from '../pages/Answers/AnswerList';
+import CreateAnswer from '../pages/Answers/CreateAnswer';
+import UpdateAnswer from '../pages/Answers/UpdateAnswer';
+
 
 const Calendar = lazy(() => import('../pages/Calendar'));
 const Chart = lazy(() => import('../pages/Chart'));
@@ -18,6 +22,21 @@ const Buttons = lazy(() => import('../pages/UiElements/Buttons'));
 const Demo= lazy(() => import('../pages/Demo'));
 
 const coreRoutes = [
+  {
+    path: '/answers/create',
+    title: 'Create Answers',
+    component: CreateAnswers,
+  },
+  {
+    path: '/answers/update/:id',
+    title: 'Update Answers',
+    component: UpdateAnswers,
+  },
+  {
+    path: '/answers/list',
+    title: 'List Answers',
+    component: AnswerList,
+  },
   {
     path: '/users/roles',
     title: 'Users Roles',
