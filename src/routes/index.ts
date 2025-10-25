@@ -25,12 +25,12 @@ const coreRoutes = [
   {
     path: '/answers/create',
     title: 'Create Answers',
-    component: CreateAnswers,
+    component: CreateAnswer,
   },
   {
     path: '/answers/update/:id',
     title: 'Update Answers',
-    component: UpdateAnswers,
+    component: UpdateAnswer,
   },
   {
     path: '/answers/list',
