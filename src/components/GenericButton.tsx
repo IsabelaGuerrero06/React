@@ -1,36 +1,42 @@
-import React from 'react';
+import React from "react";
 
 interface GenericButtonProps {
   label: string;
   onClick: () => void;
-  variant?: 'primary' | 'secondary' | 'danger' | 'info' | 'success';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: "primary" | "secondary" | "danger" | "info" | "success";
+  size?: "sm" | "md" | "lg";
 }
-
-const variantStyles: Record<string, string> = {
-  primary: 'bg-blue-500 hover:bg-blue-600 text-white',
-  secondary: 'bg-gray-200 hover:bg-gray-300 text-gray-800',
-  danger: 'bg-red-500 hover:bg-red-600 text-white',
-  info: 'bg-sky-500 hover:bg-sky-600 text-white',
-  success: 'bg-green-500 hover:bg-green-600 text-white',
-};
-
-const sizeStyles: Record<string, string> = {
-  sm: 'px-2 py-1 text-sm',
-  md: 'px-3 py-2 text-base',
-  lg: 'px-4 py-3 text-lg',
-};
 
 const GenericButton: React.FC<GenericButtonProps> = ({
   label,
   onClick,
-  variant = 'primary',
-  size = 'sm',
+  variant = "primary",
+  size = "sm",
 }) => {
+  const baseStyle =
+    "rounded-md font-medium transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 shadow-sm";
+
+  const variantStyles: Record<string, string> = {
+    primary:
+      "bg-[#2563eb] hover:bg-[#1d4ed8] text-white border border-[#1d4ed8]",
+    secondary:
+      "bg-[#e5e7eb] hover:bg-[#d1d5db] text-[#111827] border border-[#9ca3af]",
+    danger: "bg-[#dc2626] hover:bg-[#b91c1c] text-white border border-[#991b1b]",
+    info: "bg-[#0284c7] hover:bg-[#0369a1] text-white border border-[#075985]",
+    success:
+      "bg-[#16a34a] hover:bg-[#15803d] text-white border border-[#166534]",
+  };
+
+  const sizeStyles: Record<string, string> = {
+    sm: "px-3 py-1 text-sm",
+    md: "px-4 py-2 text-base",
+    lg: "px-5 py-3 text-lg",
+  };
+
   return (
     <button
       onClick={onClick}
-      className={`rounded-md font-medium transition duration-200 ${variantStyles[variant]} ${sizeStyles[size]}`}
+      className={`${baseStyle} ${variantStyles[variant]} ${sizeStyles[size]}`}
     >
       {label}
     </button>
