@@ -1,9 +1,10 @@
-import { useNavigate } from "react-router-dom";
-import React, { useEffect, useState } from 'react';
-import GenericTable from '../../components/GenericTable';
-import { User } from '../../models/User';
-import { userService } from '../../services/userService';
-import Swal from 'sweetalert2';
+import { useNavigate } from "react-router-dom"; 
+import React, { useEffect, useState } from "react";
+import GenericTable from "../../components/GenericTable";
+import GenericButton from "../../components/GenericButton";
+import { User } from "../../models/User";
+import { userService } from "../../services/userService";
+import Swal from "sweetalert2";
 
 const ListUsers: React.FC = () => {
   const navigate = useNavigate();
@@ -12,7 +13,7 @@ const ListUsers: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-    console.log('Users fetched:', users);
+    console.log("Users fetched:", users);
   }, []);
 
   const fetchData = async () => {
@@ -20,39 +21,35 @@ const ListUsers: React.FC = () => {
       const users = await userService.getUsers();
       setUsers(users);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error("Error fetching users:", error);
     }
   };
 
   const handleAction = async (action: string, item: User) => {
     if (action === "view") {
-      console.log('View user:', item);
       navigate(`/user/${item.id}`);
-    } else if (action === 'edit') {
-      console.log('Edit user:', item);
+    } else if (action === "edit") {
       navigate(`/users/update/${item.id}`);
-    } else if (action === 'delete') {
-      console.log('Delete user:', item);
+    } else if (action === "delete") {
       Swal.fire({
-        title: 'Eliminación',
-        text: '¿Está seguro de querer eliminar el registro?',
-        icon: 'warning',
+        title: "Eliminación",
+        text: "¿Está seguro de querer eliminar el registro?",
+        icon: "warning",
         showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Si, eliminar',
-        cancelButtonText: 'No',
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Sí, eliminar",
+        cancelButtonText: "No",
       }).then(async (result) => {
         if (result.isConfirmed) {
           const success = await userService.deleteUser(item.id!);
           if (success) {
             Swal.fire({
-              title: 'Eliminado',
-              text: 'El registro se ha eliminado',
-              icon: 'success',
+              title: "Eliminado",
+              text: "El registro se ha eliminado",
+              icon: "success",
             });
           }
-          // Vuelve a obtener los usuarios después de eliminar uno
           fetchData();
         }
       });
@@ -75,15 +72,22 @@ const ListUsers: React.FC = () => {
 
   return (
     <div className="p-4">
-      <h2 className="text-2xl font-semibold mb-4">Users</h2>
+      {/* Header con título y botón */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
+          Users
+        </h2>
 
-      <button
-        onClick={() => navigate("/users/create")}
-        className="mb-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-      >
-        + Add User
-      </button>
+        {/* Aquí usamos el GenericButton */}
+        <GenericButton
+          label="+ Add User"
+          onClick={() => navigate("/users/create")}
+          variant="success"
+          size="md"
+        />
+      </div>
 
+      {/* Tabla genérica */}
       <GenericTable
         data={users}
         columns={["id", "name", "email"]}

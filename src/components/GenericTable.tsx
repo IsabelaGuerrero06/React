@@ -43,7 +43,7 @@ const GenericTable: React.FC<GenericTableProps> = ({
                   {item[col]}
                 </td>
               ))}
-              <td className="border px-4 py-2 space-x-2">
+              <td className="border px-4 py-2 flex flex-wrap gap-2">
                 {actions.map((action) => (
                   <GenericButton
                     key={action.name}
