@@ -3,22 +3,24 @@ import React, { useEffect, useState } from 'react';
 import GenericTable from '../../components/GenericTable';
 import { User } from '../../models/User';
 import { userService } from '../../services/userService';
+import { useUILibrary } from '../../contexts/UILibraryContext';
 import Swal from 'sweetalert2';
 
 const ListUsers: React.FC = () => {
   const navigate = useNavigate();
+  const { currentLibrary } = useUILibrary();
 
   const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
     fetchData();
-    console.log('Users fetched:', users);
   }, []);
 
   const fetchData = async () => {
     try {
       const users = await userService.getUsers();
       setUsers(users);
+      console.log('Users fetched:', users);
     } catch (error) {
       console.error('Error fetching users:', error);
     }
@@ -73,13 +75,47 @@ const ListUsers: React.FC = () => {
     }
   };
 
+  // Estilos dinámicos según la librería seleccionada
+  const getButtonStyles = () => {
+    switch (currentLibrary) {
+      case 'material':
+        return "mb-4 bg-indigo-600 text-white px-6 py-3 rounded shadow-md hover:bg-indigo-700 transition-all duration-200 font-medium";
+      case 'bootstrap':
+        return "mb-4 bg-blue-600 text-white px-4 py-2 rounded border border-blue-700 hover:bg-blue-700 font-medium";
+      default: // tailwind
+        return "mb-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors duration-200 font-medium";
+    }
+  };
+
+  const getTitleStyles = () => {
+    switch (currentLibrary) {
+      case 'material':
+        return "text-3xl font-bold mb-6 text-indigo-900";
+      case 'bootstrap':
+        return "text-2xl font-semibold mb-4 text-gray-800";
+      default: // tailwind
+        return "text-2xl font-semibold mb-4 text-slate-800";
+    }
+  };
+
+  const getContainerStyles = () => {
+    switch (currentLibrary) {
+      case 'material':
+        return "p-6";
+      case 'bootstrap':
+        return "p-4";
+      default: // tailwind
+        return "p-4";
+    }
+  };
+
   return (
-    <div className="p-4">
-      <h2 className="text-2xl font-semibold mb-4">Users</h2>
+    <div className={getContainerStyles()}>
+      <h2 className={getTitleStyles()}>Users</h2>
 
       <button
         onClick={() => navigate("/users/create")}
-        className="mb-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        className={getButtonStyles()}
       >
         + Add User
       </button>
@@ -99,6 +135,7 @@ const ListUsers: React.FC = () => {
           { name: "sessions", label: "Sessions", variant: "secondary" },
         ]}
         onAction={handleAction}
+        uiLibrary={currentLibrary}
       />
     </div>
   );

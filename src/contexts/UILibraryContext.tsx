@@ -1,32 +1,28 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 type UILibrary = 'tailwind' | 'material' | 'bootstrap';
 
 interface UILibraryContextType {
-  library: UILibrary;
-  setLibrary: (lib: UILibrary) => void;
+  currentLibrary: UILibrary;
+  setCurrentLibrary: (library: UILibrary) => void;
 }
 
-const UILibraryContext = createContext<UILibraryContextType>({
-  library: 'tailwind',
-  setLibrary: () => {},
-});
+const UILibraryContext = createContext<UILibraryContextType | undefined>(undefined);
 
-export const useUILibrary = () => useContext(UILibraryContext);
-
-export const UILibraryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [library, setLibrary] = useState<UILibrary>(() => {
-    const saved = localStorage.getItem('ui-library');
-    return (saved as UILibrary) || 'tailwind';
-  });
-
-  useEffect(() => {
-    localStorage.setItem('ui-library', library);
-  }, [library]);
+export const UILibraryProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [currentLibrary, setCurrentLibrary] = useState<UILibrary>('tailwind');
 
   return (
-    <UILibraryContext.Provider value={{ library, setLibrary }}>
+    <UILibraryContext.Provider value={{ currentLibrary, setCurrentLibrary }}>
       {children}
     </UILibraryContext.Provider>
   );
+};
+
+export const useUILibrary = () => {
+  const context = useContext(UILibraryContext);
+  if (context === undefined) {
+    throw new Error('useUILibrary must be used within a UILibraryProvider');
+  }
+  return context;
 };
