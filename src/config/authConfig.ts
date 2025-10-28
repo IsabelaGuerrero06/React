@@ -79,7 +79,7 @@ export const googleOAuthConfig: OAuthConfig = {
  */
 export const microsoftOAuthConfig: OAuthConfig = {
   clientId: import.meta.env.VITE_MICROSOFT_CLIENT_ID || '',
-  redirectUri: import.meta.env.VITE_MICROSOFT_REDIRECT_URI || `${window.location.origin}/auth/callback`,
+  redirectUri: import.meta.env.VITE_MICROSOFT_REDIRECT_URI || 'http://localhost:5173/auth/callback',
   scope: ['openid', 'email', 'profile', 'User.Read'],
   responseType: 'code',
   prompt: 'select_account',

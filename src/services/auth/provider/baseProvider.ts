@@ -79,34 +79,56 @@ export abstract class BaseAuthProvider implements IAuthProvider {
 
   protected waitForPopupResult(popup: Window): Promise<OAuthResult> {
     return new Promise((resolve, reject) => {
-      const interval = setInterval(() => {
+      // Prefer message-based communication: the popup should redirect to a
+      // same-origin receiver page which calls `window.opener.postMessage(...)`.
+      const handleMessage = (event: MessageEvent) => {
         try {
-          if (popup.closed) {
-            clearInterval(interval);
+          if (event.origin !== window.location.origin) return;
+          const data = event.data;
+          if (!data || data.type !== 'oauth_callback') return;
+
+          cleanup();
+          const { code, error } = data;
+          if (error) return reject(new Error(error));
+          if (code) return resolve({ code });
+          return reject(new Error('No code received'));
+        } catch (err) {
+          cleanup();
+          reject(err);
+        }
+      };
+
+      window.addEventListener('message', handleMessage);
+
+      // Fallback polling to detect if user closed the popup. Keep it minimal
+      // to avoid triggering some browser COOP/COEP warnings.
+      const pollInterval = setInterval(() => {
+        try {
+          if (!popup || popup.closed) {
+            cleanup();
             reject(new Error('Popup closed by user'));
-            return;
-          }
-          const popupUrl = popup.location.href;
-          if (popupUrl.includes(this.config.redirectUri)) {
-            const url = new URL(popupUrl);
-            const code = url.searchParams.get('code');
-            const error = url.searchParams.get('error');
-
-            clearInterval(interval);
-            popup.close();
-
-            if (error) {
-              reject(new Error(error));
-            } else if (code) {
-              resolve({ code });
-            } else {
-              reject(new Error('No code received'));
-            }
           }
         } catch (e) {
-          // Cross-origin errors are expected while provider shows its page
+          // ignore cross-origin access errors
         }
       }, 500);
+
+      // Timeout after 5 minutes
+      const timeout = setTimeout(() => {
+        cleanup();
+        reject(new Error('Timeout waiting for popup'));
+      }, 5 * 60 * 1000);
+
+      function cleanup() {
+        clearInterval(pollInterval);
+        clearTimeout(timeout);
+        window.removeEventListener('message', handleMessage);
+        try {
+          if (popup && !popup.closed) popup.close();
+        } catch (e) {
+          // swallow
+        }
+      }
     });
   }
 
