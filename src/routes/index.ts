@@ -8,9 +8,9 @@ import Permissions from '../pages/Permissions';
 import ListAnswer from '../pages/Answers/ListAnswer';
 import CreateAnswer from '../pages/Answers/CreateAnswer';
 import UpdateAnswer from '../pages/Answers/UpdateAnswer';
-import UserSessions from "../pages/UserSessions";
+import UserSessionsWrapper from "../pages/UserSessionWrapper";
 
-// 📦 Import lazy para los perfiles
+
 const Profile = lazy(() => import('../pages/Profiles/Profile'));
 const CreateProfile = lazy(() => import('../pages/Profiles/CreateProfile'));
 const UpdateProfile = lazy(() => import('../pages/Profiles/UpdateProfile'));
@@ -68,10 +68,10 @@ const coreRoutes = [
     component: Permissions,            
   }, 
   {
-    path: "/sessions/user",
-    title: "User Sessions",
-    component: UserSessions,
-  },
+  path: "/sessions/user/:id",  // :id es dinámico
+  title: "User Sessions",
+  component: UserSessionsWrapper, // usamos el wrapper
+},
   {
     path: '/demo',
     title: 'Demo',
