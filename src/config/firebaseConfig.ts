@@ -1,5 +1,11 @@
+// src/config/firebaseConfig.ts
 import { initializeApp } from 'firebase/app';
-import { getAuth, OAuthProvider } from 'firebase/auth';
+import { 
+  getAuth, 
+  OAuthProvider,
+  GoogleAuthProvider as FirebaseGoogleProvider,
+  GithubAuthProvider as FirebaseGithubProvider 
+} from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -8,24 +14,33 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase
+// Inicializar Firebase
 const app = initializeApp(firebaseConfig);
+
+// Inicializar Auth
 export const auth = getAuth(app);
 
-// Microsoft provider
+// 🔹 Microsoft Provider
 export const microsoftProvider = new OAuthProvider('microsoft.com');
-// Agregar los scopes necesarios para Microsoft
-microsoftProvider.addScope('user.read');
-microsoftProvider.addScope('openid');
-microsoftProvider.addScope('profile');
-microsoftProvider.addScope('email');
-
 microsoftProvider.setCustomParameters({
+  tenant: 'common',
   prompt: 'select_account',
-  tenant: 'common'
 });
+
+// 🔹 Google Provider
+export const googleProvider = new FirebaseGoogleProvider();
+googleProvider.setCustomParameters({
+  prompt: 'select_account',
+});
+googleProvider.addScope('profile');
+googleProvider.addScope('email');
+
+// 🔹 GitHub Provider  
+export const githubProvider = new FirebaseGithubProvider();
+githubProvider.addScope('read:user');
+githubProvider.addScope('user:email');
 
 export default app;

@@ -11,10 +11,8 @@ class SecurityService extends EventTarget {
     
     constructor() {
         super();
-
-        // Guardaremos el token bajo la clave 'token' para que coincida con el interceptor
         this.keySession = 'token';
-        this.API_URL = import.meta.env.VITE_API_URL || ""; // Reemplaza con la URL real
+        this.API_URL = import.meta.env.VITE_API_URL || "";
         const storedUser = localStorage.getItem("user");
         if (storedUser) {
             this.user = JSON.parse(storedUser);
@@ -35,16 +33,13 @@ class SecurityService extends EventTarget {
             const data = response.data;
             console.log('Respuesta login:', data);
 
-            // El backend puede devolver { user: {...}, token: '...' } o directamente el user con token
             const token = data?.token || data?.accessToken || data?.session || null;
             const userObj = data?.user ? data.user : (data?.user === undefined && data?.name ? data : null);
 
-            // Si vino token, guardarlo bajo la clave definida (token)
             if (token) {
                 localStorage.setItem(this.keySession, typeof token === 'string' ? token : JSON.stringify(token));
             }
 
-            // Si vino el usuario, guardarlo correctamente y despacharlo al store
             if (userObj) {
                 this.user = userObj;
                 localStorage.setItem('user', JSON.stringify(userObj));
@@ -53,7 +48,6 @@ class SecurityService extends EventTarget {
                 return { user: userObj, token };
             }
 
-            // Fallback: si la respuesta es un objeto plano
             this.user = data as any;
             localStorage.setItem('user', JSON.stringify(data));
             store.dispatch(setUser(data as any));
@@ -61,6 +55,28 @@ class SecurityService extends EventTarget {
         } catch (error) {
             console.error('Error during login:', error);
             throw error;
+        }
+    }
+
+    /**
+     * Método para establecer sesión después de OAuth
+     * @param user - Objeto de usuario
+     * @param token - Token de autenticación
+     */
+    setSession(user: User, token: string) {
+        console.log('Setting session:', { user, token });
+        
+        // Guardar token
+        if (token) {
+            localStorage.setItem(this.keySession, token);
+        }
+
+        // Guardar usuario
+        if (user) {
+            this.user = user;
+            localStorage.setItem('user', JSON.stringify(user));
+            store.dispatch(setUser(user));
+            this.dispatchEvent(new CustomEvent('userChange', { detail: user }));
         }
     }
     
