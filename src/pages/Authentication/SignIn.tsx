@@ -1,16 +1,15 @@
-import React from "react";
+import React from 'react';
 
-
-import { Formik, Form, Field, ErrorMessage } from "formik";
-import * as Yup from "yup";
-import { User } from "../../models/User";
+import { Formik, Form, Field, ErrorMessage } from 'formik';
+import * as Yup from 'yup';
+import { User } from '../../models/User';
 import SecurityService from '../../services/securityService';
 
-import Breadcrumb from "../../components/Breadcrumb";
-import SocialSignInButton from "../../components/SocialSignInButton";
-import { AuthProvider } from "../../types/authTypes";
+import Breadcrumb from '../../components/Breadcrumb';
+import SocialSignInButton from '../../components/SocialSignInButton';
+import { AuthProvider } from '../../types/authTypes';
 import { signInWith } from '../../services/auth';
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from 'react-router-dom';
 
 const SignIn: React.FC = () => {
   const navigate = useNavigate();
@@ -20,41 +19,52 @@ const SignIn: React.FC = () => {
       const result = await signInWith(provider, { popup: true });
       console.log('OAuth result:', result);
 
-      // Si obtuvimos un código de autorización, enviarlo al backend para intercambio
-      const code = (result && (result as any).code) || (result && (result as any).authorizationCode);
-      if (code) {
-        const resp = await fetch(`${(import.meta as any).env.VITE_API_URL}/auth/exchange`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ provider, code }),
-        });
-
-        const data = await resp.json();
-        console.log('Exchange response:', resp.status, data);
-        if (resp.ok) {
-          // Esperamos { user, token } o similar
-          const user = data.user || data;
-          const token = data.token || data.accessToken || (data as any).token;
-          SecurityService.setSession(user, token);
-          navigate('/');
-          return;
-        } else {
-          console.error('Exchange failed', data);
-        }
+      if (!result || !result.accessToken) {
+        throw new Error('No se recibió token de acceso');
       }
 
-      // Si el provider devuelve accessToken directo (no code), puedes enviarlo también al backend
-      const accessToken = (result && (result as any).accessToken) || null;
-      if (accessToken) {
-        const resp2 = await fetch(`${(import.meta as any).env.VITE_API_URL}/auth/exchange`, {
+      // Enviar el token al backend para validación/registro
+      const resp = await fetch(
+        `${(import.meta as any).env.VITE_API_URL}/auth/social-login`,
+        {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ provider, accessToken }),
-        });
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${result.accessToken}`,
+          },
+          body: JSON.stringify({
+            provider,
+            token: result.accessToken,
+          }),
+        },
+      );
+
+      if (!resp.ok) {
+        throw new Error('Error al validar con el backend');
+      }
+
+      const data = await resp.json();
+
+      // Guardar la sesión con los datos del backend
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
+      // Navegar al dashboard
+      navigate('/');
+      if (accessToken) {
+        const resp2 = await fetch(
+          `${(import.meta as any).env.VITE_API_URL}/auth/exchange`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ provider, accessToken }),
+          },
+        );
         const data2 = await resp2.json();
         if (resp2.ok) {
           const user = data2.user || data2;
-          const token = data2.token || data2.accessToken || (data2 as any).token;
+          const token =
+            data2.token || data2.accessToken || (data2 as any).token;
           SecurityService.setSession(user, token);
           navigate('/');
           return;
@@ -65,15 +75,15 @@ const SignIn: React.FC = () => {
     }
   };
   const handleLogin = async (user: User) => {
-    console.log("aqui " + JSON.stringify(user))
+    console.log('aqui ' + JSON.stringify(user));
     try {
       const response = await SecurityService.login(user);
       console.log('Usuario autenticado:', response);
-      navigate("/");
+      navigate('/');
     } catch (error) {
       console.error('Error al iniciar sesión', error);
     }
-  }
+  };
   return (
     <>
       <Breadcrumb pageName="Sign In" />
@@ -82,22 +92,20 @@ const SignIn: React.FC = () => {
         <div className="flex flex-wrap items-center">
           <div className="hidden w-full xl:block xl:w-1/2">
             <div className="px-26 py-17.5 text-center">
-
-                <img
-                  className="hidden dark:block"
-                  src={"/images/logo/logo.svg"}
-                  alt="Logo"
-                  width={176}
-                  height={32}
-                />
-                <img
-                  className="dark:hidden"
-                  src={"/images/logo/logo-dark.svg"}
-                  alt="Logo"
-                  width={176}
-                  height={32}
-                />
-
+              <img
+                className="hidden dark:block"
+                src={'/images/logo/logo.svg'}
+                alt="Logo"
+                width={176}
+                height={32}
+              />
+              <img
+                className="dark:hidden"
+                src={'/images/logo/logo-dark.svg'}
+                alt="Logo"
+                width={176}
+                height={32}
+              />
 
               <p className="2xl:px-20">
                 Lorem ipsum dolor sit amet, consectetur adipiscing elit
@@ -238,34 +246,65 @@ const SignIn: React.FC = () => {
 
               <Formik
                 initialValues={{
-                  email: "",
-                  password: ""
+                  email: '',
+                  password: '',
                 }}
                 validationSchema={Yup.object({
-                  email: Yup.string().email("Email inválido").required("El email es obligatorio"),
-                  password: Yup.string().required("La contraseña es obligatoria"),
+                  email: Yup.string()
+                    .email('Email inválido')
+                    .required('El email es obligatorio'),
+                  password: Yup.string().required(
+                    'La contraseña es obligatoria',
+                  ),
                 })}
                 onSubmit={(values) => {
-                  const formattedValues = { ...values };  // Formateo adicional si es necesario
+                  const formattedValues = { ...values }; // Formateo adicional si es necesario
                   handleLogin(formattedValues);
                 }}
-
               >
                 {({ handleSubmit }) => (
-                  <Form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 p-6 bg-white rounded-md shadow-md">
-
+                  <Form
+                    onSubmit={handleSubmit}
+                    className="grid grid-cols-1 gap-4 p-6 bg-white rounded-md shadow-md"
+                  >
                     {/* Email */}
                     <div>
-                      <label htmlFor="email" className="block text-lg font-medium text-gray-700">Email</label>
-                      <Field type="email" name="email" className="w-full border rounded-md p-2" />
-                      <ErrorMessage name="email" component="p" className="text-red-500 text-sm" />
+                      <label
+                        htmlFor="email"
+                        className="block text-lg font-medium text-gray-700"
+                      >
+                        Email
+                      </label>
+                      <Field
+                        type="email"
+                        name="email"
+                        className="w-full border rounded-md p-2"
+                      />
+                      <ErrorMessage
+                        name="email"
+                        component="p"
+                        className="text-red-500 text-sm"
+                      />
                     </div>
 
                     {/* Password */}
                     <div>
-                      <label htmlFor="password" className="block text-lg font-medium text-gray-700">Password</label>
-                      <Field type="password" name="password" className="w-full border rounded-md p-2" />
-                      <ErrorMessage name="password" component="p" className="text-red-500 text-sm" />
+                      <label
+                        htmlFor="password"
+                        className="block text-lg font-medium text-gray-700"
+                      >
+                        Password
+                      </label>
+                      <Field
+                        type="password"
+                        name="password"
+                        className="w-full border rounded-md p-2"
+                      />
+                      <ErrorMessage
+                        name="password"
+                        component="p"
+                        className="text-red-500 text-sm"
+                      />
                     </div>
                     {/* Botón de enviar */}
                     <button
@@ -276,18 +315,24 @@ const SignIn: React.FC = () => {
                     </button>
 
                     <div className="mt-4 space-y-3">
-                      <SocialSignInButton provider={AuthProvider.GOOGLE} onClick={() => handleSocial(AuthProvider.GOOGLE)} />
-                      <SocialSignInButton provider={AuthProvider.MICROSOFT} onClick={() => handleSocial(AuthProvider.MICROSOFT)} />
-                      <SocialSignInButton provider={AuthProvider.GITHUB} onClick={() => handleSocial(AuthProvider.GITHUB)} />
+                      <SocialSignInButton
+                        provider={AuthProvider.GOOGLE}
+                        onClick={() => handleSocial(AuthProvider.GOOGLE)}
+                      />
+                      <SocialSignInButton
+                        provider={AuthProvider.MICROSOFT}
+                        onClick={() => handleSocial(AuthProvider.MICROSOFT)}
+                      />
+                      <SocialSignInButton
+                        provider={AuthProvider.GITHUB}
+                        onClick={() => handleSocial(AuthProvider.GITHUB)}
+                      />
                     </div>
-
                   </Form>
                 )}
               </Formik>
 
-              <div className="mt-6 text-center">
-                
-              </div>
+              <div className="mt-6 text-center"></div>
             </div>
           </div>
         </div>

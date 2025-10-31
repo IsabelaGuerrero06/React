@@ -1,26 +1,25 @@
 import { useNavigate } from "react-router-dom";
-import React, { useEffect, useState } from 'react';
-import GenericTable from '../../components/GenericTable';
-import { User } from '../../models/User';
-import { userService } from '../../services/userService';
-import Swal from 'sweetalert2';
+import React, { useEffect, useState } from "react";
+import GenericTable from "../../components/GenericTable";
+import GenericButton from "../../components/GenericButton";
+import { User } from "../../models/User";
+import { userService } from "../../services/userService";
+import { useUILibrary } from "../../contexts/UILibraryContext";
+import Swal from "sweetalert2";
 
 const ListUsers: React.FC = () => {
   const navigate = useNavigate();
   const { currentLibrary } = useUILibrary();
-
   const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
     fetchData();
-    console.log('Users fetched:', users);
   }, []);
 
   const fetchData = async () => {
     try {
       const users = await userService.getUsers();
       setUsers(users);
-      console.log('Users fetched:', users);
     } catch (error) {
       console.error("Error fetching users:", error);
     }
@@ -50,13 +49,11 @@ const ListUsers: React.FC = () => {
               text: "El registro se ha eliminado",
               icon: "success",
             });
+            fetchData();
           }
-          fetchData();
         }
       });
-    }
-    // Navegaciones a relaciones
-    else if (action === "profile") {
+    } else if (action === "profile") {
       navigate(`/profile/${item.id}`);
     } else if (action === "address") {
       navigate(`/address/${item.id}`);
@@ -71,50 +68,42 @@ const ListUsers: React.FC = () => {
     }
   };
 
-  // Estilos dinámicos según la librería seleccionada
-  const getButtonStyles = () => {
-    switch (currentLibrary) {
-      case 'material':
-        return "mb-4 bg-indigo-600 text-white px-6 py-3 rounded shadow-md hover:bg-indigo-700 transition-all duration-200 font-medium";
-      case 'bootstrap':
-        return "mb-4 bg-blue-600 text-white px-4 py-2 rounded border border-blue-700 hover:bg-blue-700 font-medium";
-      default: // tailwind
-        return "mb-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors duration-200 font-medium";
-    }
-  };
-
+  // 🎨 Estilos adaptados según la librería UI
   const getTitleStyles = () => {
     switch (currentLibrary) {
-      case 'material':
+      case "material":
         return "text-3xl font-bold mb-6 text-indigo-900";
-      case 'bootstrap':
+      case "bootstrap":
         return "text-2xl font-semibold mb-4 text-gray-800";
-      default: // tailwind
+      default:
         return "text-2xl font-semibold mb-4 text-slate-800";
     }
   };
 
   const getContainerStyles = () => {
     switch (currentLibrary) {
-      case 'material':
+      case "material":
         return "p-6";
-      case 'bootstrap':
+      case "bootstrap":
         return "p-4";
-      default: // tailwind
+      default:
         return "p-4";
     }
   };
 
   return (
-    <div className="p-4">
-      <h2 className="text-2xl font-semibold mb-4">Users</h2>
+    <div className={getContainerStyles()}>
+      {/* Header con título y botón */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className={getTitleStyles()}>Users</h2>
 
-      <button
-        onClick={() => navigate("/users/create")}
-        className="mb-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-      >
-        + Add User
-      </button>
+        <GenericButton
+          label="+ Add User"
+          onClick={() => navigate("/users/create")}
+          variant="success"
+          size="md"
+        />
+      </div>
 
       {/* Tabla genérica */}
       <GenericTable
@@ -126,13 +115,16 @@ const ListUsers: React.FC = () => {
           { name: "delete", label: "Delete", variant: "danger" },
           { name: "profile", label: "Profile", variant: "info" },
           { name: "address", label: "Address", variant: "secondary" },
-          { name: "digitalSignature", label: "Digital Signature", variant: "success" },
+          {
+            name: "digitalSignature",
+            label: "Digital Signature",
+            variant: "success",
+          },
           { name: "devices", label: "Devices", variant: "success" },
           { name: "passwords", label: "Passwords", variant: "primary" },
           { name: "sessions", label: "Sessions", variant: "secondary" },
         ]}
         onAction={handleAction}
-        uiLibrary={currentLibrary}
       />
     </div>
   );
