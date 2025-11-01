@@ -8,14 +8,12 @@ import {
 } from '../../../types/authTypes';
 import { BaseAuthProvider } from './baseProvider';
 
+import { signInWithPopup, signOut, OAuthProvider as FirebaseOAuthProvider } from 'firebase/auth';
+import { auth, microsoftProvider } from '../../../config/firebaseConfig';
+
 export class MicrosoftAuthProvider extends BaseAuthProvider {
   readonly provider = AuthProvider.MICROSOFT;
   readonly config: OAuthConfig;
-
-  private readonly TENANT = 'common';
-  private readonly AUTH_ENDPOINT = `https://login.microsoftonline.com/${this.TENANT}/oauth2/v2.0/authorize`;
-  private readonly TOKEN_ENDPOINT = `https://login.microsoftonline.com/${this.TENANT}/oauth2/v2.0/token`;
-  private readonly LOGOUT_ENDPOINT = `https://login.microsoftonline.com/${this.TENANT}/oauth2/v2.0/logout`;
 
   constructor(config: OAuthConfig) {
     super();
@@ -40,34 +38,24 @@ export class MicrosoftAuthProvider extends BaseAuthProvider {
   async signIn(options?: ProviderOptions): Promise<OAuthResult> {
     try {
       await this.initialize();
+      // Use Firebase popup flow — this avoids cross-origin opener/close issues
+      const result = await signInWithPopup(auth, microsoftProvider);
+      const user = result.user;
+      const credential = FirebaseOAuthProvider.credentialFromResult(result);
 
-      const state = options?.state || this.generateState();
-      const nonce = options?.nonce || this.generateNonce();
+      this.accessToken = credential?.accessToken || null;
 
-      sessionStorage.setItem('oauth_state', state);
-      sessionStorage.setItem('oauth_nonce', nonce);
-
-      const params = {
-        client_id: this.config.clientId,
-        redirect_uri: this.config.redirectUri,
-        response_type: this.config.responseType || 'code',
-        scope: this.config.scope?.join(' ') || 'openid email profile User.Read',
-        state,
-        nonce,
-        prompt: this.config.prompt || 'select_account',
-        response_mode: 'query',
-      } as Record<string, string>;
-
-      const authUrl = this.buildAuthUrl(this.AUTH_ENDPOINT, params);
-
-      if (options?.popup) {
-        const popup = this.openPopup(authUrl, 'Microsoft Sign In');
-        if (!popup) throw new Error('Failed to open popup window');
-        return await this.waitForPopupResult(popup);
-      }
-
-      window.location.href = authUrl;
-      return new Promise(() => {});
+      // Return a normalized OAuthResult that the app expects
+      return {
+        user: {
+          id: user.uid,
+          email: user.email || '',
+          name: user.displayName || '',
+          picture: user.photoURL || ''
+        },
+        accessToken: this.accessToken || null,
+        provider: this.provider
+      } as any;
     } catch (error) {
       throw this.handleError(error);
     }
@@ -75,13 +63,8 @@ export class MicrosoftAuthProvider extends BaseAuthProvider {
 
   async signOut(): Promise<void> {
     try {
+      await signOut(auth);
       this.accessToken = null;
-      sessionStorage.removeItem('oauth_state');
-      sessionStorage.removeItem('oauth_nonce');
-      sessionStorage.removeItem('refresh_token');
-
-      const logoutUrl = `${this.LOGOUT_ENDPOINT}?post_logout_redirect_uri=${encodeURIComponent(window.location.origin)}`;
-      window.location.href = logoutUrl;
       console.log('Microsoft sign out successful');
     } catch (error) {
       console.error('Error signing out:', error);
@@ -98,56 +81,20 @@ export class MicrosoftAuthProvider extends BaseAuthProvider {
   }
 
   async refreshToken(): Promise<string | null> {
-    try {
-      const refreshToken = sessionStorage.getItem('refresh_token');
-      if (!refreshToken) throw new Error('No refresh token available');
-
-      const response = await fetch(this.TOKEN_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          client_id: this.config.clientId,
-          refresh_token: refreshToken,
-          grant_type: 'refresh_token',
-          scope: this.config.scope?.join(' ') || 'openid email profile User.Read',
-        }),
-      });
-
-      if (!response.ok) throw new Error('Failed to refresh token');
-      const data = await response.json();
-      this.accessToken = data.access_token;
-      return this.accessToken;
-    } catch (error) {
-      throw this.handleError(error);
-    }
+    // When using Firebase client SDK (signInWithPopup) token refresh is handled
+    // internally by Firebase. If you implement a server-side exchange flow you
+    // should refresh tokens on the server and return them here. For now return
+    // null to indicate no client-side refresh performed.
+    return null;
   }
 
   async exchangeCodeForToken(code: string): Promise<OAuthResult> {
-    try {
-      const response = await fetch(this.TOKEN_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          client_id: this.config.clientId,
-          code,
-          redirect_uri: this.config.redirectUri,
-          grant_type: 'authorization_code',
-          scope: this.config.scope?.join(' ') || 'openid email profile User.Read',
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error_description || 'Failed to exchange code for token');
-      }
-
-      const data = await response.json();
-      this.accessToken = data.access_token;
-      if (data.refresh_token) sessionStorage.setItem('refresh_token', data.refresh_token);
-      return { accessToken: data.access_token, idToken: data.id_token };
-    } catch (error) {
-      throw this.handleError(error);
-    }
+    // This method is not used when using Firebase popup flow. If you are using
+    // the authorization-code + redirect flow you'll need a backend endpoint to
+    // securely exchange the code for tokens (do not call the token endpoint
+    // directly from the browser with client secret). Throw an explicit error
+    // so callers know to use the backend exchange.
+    throw new Error('exchangeCodeForToken is not implemented on the client. Use a backend exchange for authorization code flows.');
   }
 
   async getUserInfo(accessToken: string): Promise<any> {

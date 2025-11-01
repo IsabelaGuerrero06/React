@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Profile } from '../models/Profile';
 import { createProfile, updateProfile } from '../services/ProfileService';
 
@@ -19,6 +19,12 @@ const ProfileForm: React.FC<Props> = ({ userId, initialProfile, onSaved }) => {
     },
   );
 
+  // estado para manejo de archivo y preview
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(
+    initialProfile?.avatarUrl || null,
+  );
+
   const isEditing = !!initialProfile;
 
   const handleChange = (
@@ -26,6 +32,25 @@ const ProfileForm: React.FC<Props> = ({ userId, initialProfile, onSaved }) => {
   ) => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
   };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      const objectUrl = URL.createObjectURL(file);
+      setPreviewUrl(objectUrl);
+    }
+  };
+
+  // limpiar URL creada por createObjectURL cuando cambie el archivo o al desmontar
+  useEffect(() => {
+    return () => {
+      if (previewUrl && selectedFile) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewUrl, selectedFile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +60,10 @@ const ProfileForm: React.FC<Props> = ({ userId, initialProfile, onSaved }) => {
       formData.append('phone', profile.phone || '');
       formData.append('address', profile.address || '');
       formData.append('about', profile.about || '');
+      // si hay un archivo seleccionado, lo anexamos con la clave 'avatar'
+      if (selectedFile) {
+        formData.append('avatar', selectedFile);
+      }
 
       if (isEditing && profile.id) {
         const res = await updateProfile(profile.id, formData);
@@ -60,6 +89,43 @@ const ProfileForm: React.FC<Props> = ({ userId, initialProfile, onSaved }) => {
         {isEditing ? 'Editar Perfil' : 'Crear Perfil'}
       </h2>
 
+      <div className="flex flex-col items-center">
+        <div className="w-36 h-36 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+          {previewUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={previewUrl}
+              alt="Avatar"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span className="text-gray-400">No hay foto</span>
+          )}
+        </div>
+        <div className="mt-2 w-full flex items-center">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="hidden"
+            id="avatarInput"
+          />
+          <label
+            htmlFor="avatarInput"
+            className="ml-2 inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md cursor-pointer text-sm bg-gray-50 hover:bg-gray-100"
+          >
+            Examinar
+          </label>
+          <span className="ml-3 text-sm text-gray-600 truncate">
+            {selectedFile
+              ? selectedFile.name
+              : profile.avatarUrl
+              ? 'Foto actual'
+              : 'Sin archivo seleccionado'}
+          </span>
+        </div>
+      </div>
+
       <div>
         <label className="block text-sm font-medium text-gray-700">
           Nombre completo
@@ -75,7 +141,7 @@ const ProfileForm: React.FC<Props> = ({ userId, initialProfile, onSaved }) => {
 
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          TelÃ©fono
+          Teléfono
         </label>
         <input
           type="text"
@@ -88,7 +154,7 @@ const ProfileForm: React.FC<Props> = ({ userId, initialProfile, onSaved }) => {
 
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          DirecciÃ³n
+          Dirección
         </label>
         <input
           type="text"
@@ -101,7 +167,7 @@ const ProfileForm: React.FC<Props> = ({ userId, initialProfile, onSaved }) => {
 
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          Sobre mÃ­
+          Sobre mí
         </label>
         <textarea
           name="about"

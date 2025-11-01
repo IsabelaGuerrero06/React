@@ -24,6 +24,13 @@ export class GoogleAuthProvider extends BaseAuthProvider {
       prompt: 'select_account',
       ...config,
     };
+    
+    // 🔍 Debug: Verificar configuración al inicializar
+    console.log('🔧 GoogleAuthProvider config:', {
+      clientId: this.config.clientId,
+      redirectUri: this.config.redirectUri,
+      scope: this.config.scope,
+    });
   }
 
   async initialize(): Promise<void> {
@@ -59,15 +66,21 @@ export class GoogleAuthProvider extends BaseAuthProvider {
 
       const authUrl = this.buildAuthUrl(this.AUTH_ENDPOINT, params);
 
+      // 🔍 Debug: Mostrar URL completa antes de abrir popup
+      console.log('🔗 Google Auth URL:', authUrl);
+      console.log('📍 Redirect URI being sent:', params.redirect_uri);
+
       if (options?.popup) {
         const popup = this.openPopup(authUrl, 'Google Sign In');
         if (!popup) throw new Error('Failed to open popup window');
         return await this.waitForPopupResult(popup);
       }
 
+      // Si no es popup, redirigir
       window.location.href = authUrl;
       return new Promise(() => {});
     } catch (error) {
+      console.error('❌ Google signIn error:', error);
       throw this.handleError(error);
     }
   }

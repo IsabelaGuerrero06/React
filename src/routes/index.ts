@@ -11,6 +11,7 @@ import UpdateAnswer from '../pages/Answers/UpdateAnswer';
 import UserSessionsWrapper from "../pages/UserSessionWrapper";
 
 
+
 const Profile = lazy(() => import('../pages/Profiles/Profile'));
 const CreateProfile = lazy(() => import('../pages/Profiles/CreateProfile'));
 const UpdateProfile = lazy(() => import('../pages/Profiles/UpdateProfile'));
@@ -25,6 +26,22 @@ const Tables = lazy(() => import('../pages/Tables'));
 const Alerts = lazy(() => import('../pages/UiElements/Alerts'));
 const Buttons = lazy(() => import('../pages/UiElements/Buttons'));
 const Demo = lazy(() => import('../pages/Demo'));
+
+const MicrosoftCallback = lazy(() => import('../pages/Authentication/MicrosoftCallback'));
+const OAuthPopupReceiver = lazy(() => import('../pages/Authentication/OAuthPopupReceiver'));
+
+const authRoutes = [
+  {
+    path: '/auth/microsoft/callback',
+    title: 'Microsoft Auth Callback',
+    component: MicrosoftCallback,
+  },
+  {
+    path: '/auth/popup-receiver',
+    title: 'OAuth Popup Receiver',
+    component: OAuthPopupReceiver,
+  }
+];
 
 const coreRoutes = [
   {
@@ -61,6 +78,11 @@ const coreRoutes = [
     path: '/users/update/:id',
     title: 'Update Users',
     component: UpdateUser,
+  },
+  {
+    path: '/profile/update/:id',
+    title: 'Update profile',
+    component: UpdateProfile,
   },
   {
     path: '/users/permissions',         
@@ -150,4 +172,14 @@ const coreRoutes = [
 ];
 
 const routes = [...coreRoutes];
-export default routes;
+export default [...authRoutes, ...coreRoutes];
+
+
+//Para el perfil de usuario falta...
+// Dar vida o color a los botones. no se ven
+// Hacer una buena peticion del postamn
+// Hay una buena plantillapero necesito que se vea mas a lo que pide el profesor.
+// Hcaer el Delete perfil 
+
+
+// Session 
