@@ -68,7 +68,7 @@ export const authConfig = {
  */
 export const googleOAuthConfig: OAuthConfig = {
   clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
-  redirectUri: import.meta.env.VITE_GOOGLE_REDIRECT_URI || `${window.location.origin}/auth/callback`,
+  redirectUri: import.meta.env.VITE_GOOGLE_REDIRECT_URI || 'http://localhost:5173/auth/callback',
   scope: ['openid', 'email', 'profile'],
   responseType: 'code',
   prompt: 'select_account',
@@ -90,7 +90,7 @@ export const microsoftOAuthConfig: OAuthConfig = {
  */
 export const githubOAuthConfig: OAuthConfig = {
   clientId: import.meta.env.VITE_GITHUB_CLIENT_ID || '',
-  redirectUri: import.meta.env.VITE_GITHUB_REDIRECT_URI || `${window.location.origin}/auth/callback`,
+  redirectUri: import.meta.env.VITE_GITHUB_REDIRECT_URI || 'http://localhost:5173/auth/callback',
   scope: ['read:user', 'user:email'],
   responseType: 'code',
 };
