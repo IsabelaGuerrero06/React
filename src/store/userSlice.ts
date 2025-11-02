@@ -1,7 +1,8 @@
 // src/store/userSlice.ts
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { User } from "../models/User";
-//Definir la composición de la variable reactiva
+
+// Definir la composición de la variable reactiva
 interface UserState {
     user: User | null;
 }
@@ -23,8 +24,15 @@ const userSlice = createSlice({
                 localStorage.removeItem("user");
             }
         },
+        logout: (state) => {
+            state.user = null;
+            // Limpiar datos del localStorage
+            localStorage.removeItem("user");
+            localStorage.removeItem("token");
+            localStorage.removeItem("refreshToken");
+        },
     },
 });
 
-export const { setUser } = userSlice.actions;
+export const { setUser, logout } = userSlice.actions;
 export default userSlice.reducer;
