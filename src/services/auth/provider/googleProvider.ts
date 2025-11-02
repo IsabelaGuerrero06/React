@@ -8,94 +8,81 @@ import {
 } from '../../../types/authTypes';
 import { BaseAuthProvider } from './baseProvider';
 
+
+import { 
+  signInWithPopup, 
+  signOut, 
+  GoogleAuthProvider as FirebaseGoogleProvider 
+} from 'firebase/auth';
+import { auth, googleProvider } from '../../../config/firebaseConfig';
+
 export class GoogleAuthProvider extends BaseAuthProvider {
   readonly provider = AuthProvider.GOOGLE;
   readonly config: OAuthConfig;
 
-  private readonly AUTH_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
-  private readonly TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
-  private readonly USERINFO_ENDPOINT = 'https://www.googleapis.com/oauth2/v2/userinfo';
-
   constructor(config: OAuthConfig) {
     super();
-    this.config = {
-      responseType: 'code',
-      scope: ['openid', 'email', 'profile'],
-      prompt: 'select_account',
-      ...config,
-    };
-    
-    // 🔍 Debug: Verificar configuración al inicializar
-    console.log('🔧 GoogleAuthProvider config:', {
-      clientId: this.config.clientId,
-      redirectUri: this.config.redirectUri,
-      scope: this.config.scope,
-    });
+    // Config solo para compatibilidad, Firebase no lo usa
+    this.config = config;
   }
 
   async initialize(): Promise<void> {
     if (this.initialized) return;
-    try {
-      console.log('Google OAuth provider initialized');
-      this.initialized = true;
-    } catch (error) {
-      throw this.handleError(error);
-    }
+    console.log(' Google OAuth provider initialized with Firebase');
+    this.initialized = true;
   }
 
+  //  MÉTODO PRINCIPAL: Igual que Microsoft
   async signIn(options?: ProviderOptions): Promise<OAuthResult> {
     try {
       await this.initialize();
+      
+    
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      const credential = FirebaseGoogleProvider.credentialFromResult(result);
 
-      const state = options?.state || this.generateState();
-      const nonce = options?.nonce || this.generateNonce();
+      this.accessToken = credential?.accessToken || null;
 
-      sessionStorage.setItem('oauth_state', state);
-      sessionStorage.setItem('oauth_nonce', nonce);
+      console.log(' Google sign-in successful:', {
+        userId: user.uid,
+        email: user.email,
+        name: user.displayName
+      });
 
-      const params = {
-        client_id: this.config.clientId,
-        redirect_uri: this.config.redirectUri,
-        response_type: this.config.responseType || 'code',
-        scope: this.config.scope?.join(' ') || 'openid email profile',
-        state,
-        nonce,
-        prompt: this.config.prompt || 'select_account',
-        access_type: 'offline',
-      } as Record<string, string>;
-
-      const authUrl = this.buildAuthUrl(this.AUTH_ENDPOINT, params);
-
-      // 🔍 Debug: Mostrar URL completa antes de abrir popup
-      console.log('🔗 Google Auth URL:', authUrl);
-      console.log('📍 Redirect URI being sent:', params.redirect_uri);
-
-      if (options?.popup) {
-        const popup = this.openPopup(authUrl, 'Google Sign In');
-        if (!popup) throw new Error('Failed to open popup window');
-        return await this.waitForPopupResult(popup);
+  
+      return {
+        user: {
+          id: user.uid,
+          email: user.email || '',
+          name: user.displayName || '',
+          picture: user.photoURL || ''
+        },
+        accessToken: this.accessToken || null,
+        provider: this.provider
+      } as any;
+    } catch (error: any) {
+      console.error('Google sign-in error:', error);
+      
+      // Mensajes de error más claros
+      if (error.code === 'auth/popup-closed-by-user') {
+        throw new Error('Sign-in cancelled by user');
       }
-
-      // Si no es popup, redirigir
-      window.location.href = authUrl;
-      return new Promise(() => {});
-    } catch (error) {
-      console.error('❌ Google signIn error:', error);
+      if (error.code === 'auth/popup-blocked') {
+        throw new Error('Popup blocked by browser. Please allow popups.');
+      }
+      
       throw this.handleError(error);
     }
   }
 
   async signOut(): Promise<void> {
     try {
+      await signOut(auth);
       this.accessToken = null;
-      sessionStorage.removeItem('oauth_state');
-      sessionStorage.removeItem('oauth_nonce');
-      if (this.accessToken) {
-        await fetch(`https://oauth2.googleapis.com/revoke?token=${this.accessToken}`, { method: 'POST' });
-      }
-      console.log('Google sign out successful');
+      console.log(' Google sign out successful');
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error(' Error signing out:', error);
       throw this.handleError(error);
     }
   }
@@ -109,59 +96,16 @@ export class GoogleAuthProvider extends BaseAuthProvider {
   }
 
   async refreshToken(): Promise<string | null> {
-    try {
-      const refreshToken = sessionStorage.getItem('refresh_token');
-      if (!refreshToken) throw new Error('No refresh token available');
-
-      const response = await fetch(this.TOKEN_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          client_id: this.config.clientId,
-          refresh_token: refreshToken,
-          grant_type: 'refresh_token',
-        }),
-      });
-
-      if (!response.ok) throw new Error('Failed to refresh token');
-      const data = await response.json();
-      this.accessToken = data.access_token;
-      return this.accessToken;
-    } catch (error) {
-      throw this.handleError(error);
-    }
+    // Firebase maneja el refresh automáticamente
+    return null;
   }
 
+  // Métodos no usados con Firebase popup
   async exchangeCodeForToken(code: string): Promise<OAuthResult> {
-    try {
-      const response = await fetch(this.TOKEN_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          client_id: this.config.clientId,
-          code,
-          redirect_uri: this.config.redirectUri,
-          grant_type: 'authorization_code',
-        }),
-      });
-
-      if (!response.ok) throw new Error('Failed to exchange code for token');
-      const data = await response.json();
-      this.accessToken = data.access_token;
-      if (data.refresh_token) sessionStorage.setItem('refresh_token', data.refresh_token);
-      return { accessToken: data.access_token, idToken: data.id_token };
-    } catch (error) {
-      throw this.handleError(error);
-    }
+    throw new Error('Not needed with Firebase popup flow');
   }
 
   async getUserInfo(accessToken: string): Promise<any> {
-    try {
-      const response = await fetch(this.USERINFO_ENDPOINT, { headers: { Authorization: `Bearer ${accessToken}` } });
-      if (!response.ok) throw new Error('Failed to get user info');
-      return await response.json();
-    } catch (error) {
-      throw this.handleError(error);
-    }
+    throw new Error('User info already included in Firebase result');
   }
 }
