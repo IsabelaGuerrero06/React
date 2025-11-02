@@ -4,7 +4,9 @@ import ListUsers from '../pages/Users/ListUser';
 import UsersRoles from '../pages/Users/Roles';
 import CreateUser from '../pages/Users/CreateUser';
 import UpdateUser from '../pages/Users/UpdateUser';
-import Permissions from '../pages/Permissions'; 
+import CreatePermission from '../pages/Permissions/CreatePermission';
+import UpdatePermission from '../pages/Permissions/UpdatePermission';
+import Permissions from '../pages/Permissions/Permissions'; 
 import ListAnswer from '../pages/Answers/ListAnswer';
 import CreateAnswer from '../pages/Answers/CreateAnswer';
 import UpdateAnswer from '../pages/Answers/UpdateAnswer';
@@ -93,6 +95,21 @@ const coreRoutes = [
   path: "/sessions/user/:id",  // :id es dinámico
   title: "User Sessions",
   component: UserSessionsWrapper, // usamos el wrapper
+},
+{
+  path: '/users/permissions/create',
+  title: 'Create Permission',
+  component: CreatePermission,
+},
+{
+  path: '/users/permissions/update/:id',
+  title: 'Update Permission',
+  component: UpdatePermission,
+},
+{
+  path: '/users/permissions',         
+  title: 'Permissions',              
+  component: Permissions,            
 },
   {
     path: '/demo',
