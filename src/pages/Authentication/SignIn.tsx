@@ -8,6 +8,7 @@ import SocialSignInButton from '../../components/SocialSignInButton';
 import { AuthProvider } from '../../types/authTypes';
 import { signInWith } from '../../services/auth';
 import { useNavigate } from 'react-router-dom';
+import { userService } from '../../services/userService';
 
 const SignIn: React.FC = () => {
   const navigate = useNavigate();
@@ -28,7 +29,26 @@ const SignIn: React.FC = () => {
       if ((result as any).user) {
         const user = (result as any).user;
         const token = (result as any).accessToken || '';
-        
+
+        // 🔹 Asegurar usuario en backend
+        try {
+          const users = await userService.getUsers();
+          const existingUser = users.find((u) => u.email === user.email);
+
+          if (existingUser) {
+            console.log('✅ Usuario ya existe en backend:', existingUser);
+          } else {
+            const newUser = await userService.createUser({
+              name: user.displayName || user.email,
+              email: user.email,
+            });
+            console.log('🆕 Usuario creado en backend:', newUser);
+          }
+        } catch (error) {
+          console.error('❌ Error sincronizando usuario con backend:', error);
+        }
+
+        // Guardar sesión local
         SecurityService.setSession(user, token);
         navigate('/');
         return;
@@ -38,18 +58,18 @@ const SignIn: React.FC = () => {
       const code = (result as any).code;
       if (code) {
         console.log('Exchanging code with backend...');
-        
+
         const resp = await fetch(
           `${import.meta.env.VITE_API_URL}/auth/oauth/callback`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              provider, 
+            body: JSON.stringify({
+              provider,
               code,
-              redirectUri: import.meta.env[`VITE_${provider}_REDIRECT_URI`]
+              redirectUri: import.meta.env[`VITE_${provider}_REDIRECT_URI`],
             }),
-          }
+          },
         );
 
         const data = await resp.json();
@@ -58,7 +78,7 @@ const SignIn: React.FC = () => {
         if (resp.ok) {
           const user = data.user || data;
           const token = data.token || data.accessToken;
-          
+
           if (user && token) {
             SecurityService.setSession(user, token);
             navigate('/');
@@ -73,21 +93,21 @@ const SignIn: React.FC = () => {
       const accessToken = (result as any).accessToken;
       if (accessToken) {
         console.log('Processing access token...');
-        
+
         const resp = await fetch(
           `${import.meta.env.VITE_API_URL}/auth/oauth/token`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ provider, accessToken }),
-          }
+          },
         );
 
         const data = await resp.json();
         if (resp.ok) {
           const user = data.user || data;
           const token = data.token || accessToken;
-          
+
           SecurityService.setSession(user, token);
           navigate('/');
           return;
@@ -98,7 +118,7 @@ const SignIn: React.FC = () => {
     } catch (err: any) {
       console.error('Social sign-in error:', err);
       setError(err.message || 'Authentication failed. Please try again.');
-      
+
       // Log detallado del error
       if (err.code) console.error('Error code:', err.code);
       if (err.details) console.error('Error details:', err.details);
@@ -112,7 +132,7 @@ const SignIn: React.FC = () => {
       setLoading(true);
       setError(null);
       console.log('Traditional login:', user);
-      
+
       const response = await SecurityService.login(user);
       console.log('Usuario autenticado:', response);
       navigate('/');
@@ -148,7 +168,8 @@ const SignIn: React.FC = () => {
               />
 
               <p className="2xl:px-20">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit suspendisse.
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit
+                suspendisse.
               </p>
             </div>
           </div>
@@ -175,7 +196,9 @@ const SignIn: React.FC = () => {
                   email: Yup.string()
                     .email('Email inválido')
                     .required('El email es obligatorio'),
-                  password: Yup.string().required('La contraseña es obligatoria'),
+                  password: Yup.string().required(
+                    'La contraseña es obligatoria',
+                  ),
                 })}
                 onSubmit={(values) => {
                   handleLogin(values);

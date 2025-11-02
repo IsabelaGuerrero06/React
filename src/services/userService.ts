@@ -1,7 +1,8 @@
 import axios from "axios";
 import { User } from "../models/User";
 
-const API_URL = import.meta.env.VITE_API_URL + "/users" || "";
+// ✅ Corregido: ahora apunta a /api/users
+const API_URL = `${import.meta.env.VITE_API_URL}/api/users`;
 
 class UserService {
     async getUsers(): Promise<User[]> {
@@ -53,8 +54,26 @@ class UserService {
             return false;
         }
     }
+
+    async createIfNotExists(name: string, email: string): Promise<User | null> {
+        try {
+            const users = await this.getUsers();
+            const existingUser = users.find(u => u.email === email);
+
+            if (existingUser) {
+                console.log("👤 Usuario ya existe en backend:", existingUser);
+                return existingUser;
+            }
+
+            const newUser = await this.createUser({ name, email });
+            console.log("🆕 Usuario creado en backend:", newUser);
+            return newUser;
+        } catch (error) {
+            console.error("Error en createIfNotExists:", error);
+            return null;
+        }
+    }
 }
 
 // Exportamos una instancia de la clase para reutilizarla
-
 export const userService = new UserService();

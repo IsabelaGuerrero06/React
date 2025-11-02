@@ -1,5 +1,3 @@
-// src/services/auth/provider/microsoftProvider.ts
-
 import {
   AuthProvider,
   OAuthConfig,
@@ -10,6 +8,9 @@ import { BaseAuthProvider } from './baseProvider';
 
 import { signInWithPopup, signOut, OAuthProvider as FirebaseOAuthProvider } from 'firebase/auth';
 import { auth, microsoftProvider } from '../../../config/firebaseConfig';
+
+// 👇 Importamos el servicio del backend
+import { userService } from '../../../services/userService';
 
 export class MicrosoftAuthProvider extends BaseAuthProvider {
   readonly provider = AuthProvider.MICROSOFT;
@@ -44,6 +45,11 @@ export class MicrosoftAuthProvider extends BaseAuthProvider {
       const credential = FirebaseOAuthProvider.credentialFromResult(result);
 
       this.accessToken = credential?.accessToken || null;
+
+      // 🔽 Nuevo: Crear el usuario en el backend si no existe
+      if (user?.email) {
+        await userService.createIfNotExists(user.displayName || "Usuario Microsoft", user.email);
+      }
 
       // Return a normalized OAuthResult that the app expects
       return {

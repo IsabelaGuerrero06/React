@@ -1,24 +1,22 @@
-import { List, User } from 'lucide-react';
 import { lazy } from 'react';
 import ListUsers from '../pages/Users/ListUser';
 import UsersRoles from '../pages/Users/Roles';
 import CreateUser from '../pages/Users/CreateUser';
 import UpdateUser from '../pages/Users/UpdateUser';
-import CreatePermission from '../pages/Permissions/CreatePermission';
-import UpdatePermission from '../pages/Permissions/UpdatePermission';
 import Permissions from '../pages/Permissions/Permissions'; 
 import ListAnswer from '../pages/Answers/ListAnswer';
 import CreateAnswer from '../pages/Answers/CreateAnswer';
 import UpdateAnswer from '../pages/Answers/UpdateAnswer';
 import UserSessionsWrapper from "../pages/UserSessionWrapper";
 
-
-
+// Componentes de perfil
 const Profile = lazy(() => import('../pages/Profiles/Profile'));
+const ProfileDefault = lazy(() => import('../pages/Profiles/ProfileDefault'));
 const CreateProfile = lazy(() => import('../pages/Profiles/CreateProfile'));
 const UpdateProfile = lazy(() => import('../pages/Profiles/UpdateProfile'));
 const DeleteProfile = lazy(() => import('../pages/Profiles/DeleteProfile'));
 
+// Otros componentes lazy
 const Calendar = lazy(() => import('../pages/Calendar'));
 const Chart = lazy(() => import('../pages/Chart'));
 const FormElements = lazy(() => import('../pages/Form/FormElements'));
@@ -28,7 +26,6 @@ const Tables = lazy(() => import('../pages/Tables'));
 const Alerts = lazy(() => import('../pages/UiElements/Alerts'));
 const Buttons = lazy(() => import('../pages/UiElements/Buttons'));
 const Demo = lazy(() => import('../pages/Demo'));
-
 const MicrosoftCallback = lazy(() => import('../pages/Authentication/MicrosoftCallback'));
 const OAuthPopupReceiver = lazy(() => import('../pages/Authentication/OAuthPopupReceiver'));
 
@@ -46,6 +43,7 @@ const authRoutes = [
 ];
 
 const coreRoutes = [
+  // Answers
   {
     path: '/answers/create',
     title: 'Create Answers',
@@ -61,6 +59,7 @@ const coreRoutes = [
     title: 'List Answers',
     component: ListAnswer,
   },
+  // Users
   {
     path: '/users/roles',
     title: 'Users Roles',
@@ -82,49 +81,21 @@ const coreRoutes = [
     component: UpdateUser,
   },
   {
-    path: '/profile/update/:id',
-    title: 'Update profile',
-    component: UpdateProfile,
-  },
-  {
     path: '/users/permissions',         
     title: 'Permissions',              
     component: Permissions,            
-  }, 
-  {
-  path: "/sessions/user/:id",  // :id es dinámico
-  title: "User Sessions",
-  component: UserSessionsWrapper, // usamos el wrapper
-},
-{
-  path: '/users/permissions/create',
-  title: 'Create Permission',
-  component: CreatePermission,
-},
-{
-  path: '/users/permissions/update/:id',
-  title: 'Update Permission',
-  component: UpdatePermission,
-},
-{
-  path: '/users/permissions',         
-  title: 'Permissions',              
-  component: Permissions,            
-},
-  {
-    path: '/demo',
-    title: 'Demo',
-    component: Demo,
   },
+  // Sessions
   {
-    path: '/calendar',
-    title: 'Calender',
-    component: Calendar,
+    path: "/sessions/user/:id",
+    title: "User Sessions",
+    component: UserSessionsWrapper,
   },
+  // Profiles
   {
     path: '/profile',
-    title: 'Profile',
-    component: Profile,
+    title: 'Profile Default',
+    component: ProfileDefault, 
   },
   {
     path: '/profile/:id',
@@ -142,14 +113,25 @@ const coreRoutes = [
     component: CreateProfile,
   },
   {
-    path: '/profiles/edit/:id',
-    title: 'Edit Profile',
+    path: '/profile/update/:id',
+    title: 'Update Profile',
     component: UpdateProfile,
   },
   {
     path: '/profiles/delete/:id',
     title: 'Delete Profile',
     component: DeleteProfile,
+  },
+  // Otros
+  {
+    path: '/demo',
+    title: 'Demo',
+    component: Demo,
+  },
+  {
+    path: '/calendar',
+    title: 'Calendar',
+    component: Calendar,
   },
   {
     path: '/forms/form-elements',
@@ -188,15 +170,4 @@ const coreRoutes = [
   },
 ];
 
-const routes = [...coreRoutes];
 export default [...authRoutes, ...coreRoutes];
-
-
-//Para el perfil de usuario falta...
-// Dar vida o color a los botones. no se ven
-// Hacer una buena peticion del postamn
-// Hay una buena plantillapero necesito que se vea mas a lo que pide el profesor.
-// Hcaer el Delete perfil 
-
-
-// Session 
