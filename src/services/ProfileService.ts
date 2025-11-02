@@ -15,7 +15,7 @@ class ProfileAdapter {
     return {
       id: backendData.id,
       userId: backendData.user_id,
-      fullName: backendData.fullName || '',
+      fullName: backendData.fullName || backendData.name || '',
       phone: backendData.phone || '',
       address: backendData.address || '',
       about: backendData.about || '',
