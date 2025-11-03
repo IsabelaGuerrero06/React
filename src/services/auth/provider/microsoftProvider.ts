@@ -5,7 +5,7 @@ import {
   ProviderOptions,
 } from '../../../types/authTypes';
 import { BaseAuthProvider } from './baseProvider';
-
+import { oauthSessionSync } from '../OAuthSessionSyncService';
 import {
   signInWithPopup,
   signOut,
@@ -15,6 +15,8 @@ import { auth, microsoftProvider } from '../../../config/firebaseConfig';
 
 // 👇 Importamos el servicio del backend
 import { userService } from '../../../services/userService';
+import securityService from '../../../services/securityService'; // 🔥 añadido
+import { User } from '../../../models/User';
 
 export class MicrosoftAuthProvider extends BaseAuthProvider {
   readonly provider = AuthProvider.MICROSOFT;
@@ -40,42 +42,66 @@ export class MicrosoftAuthProvider extends BaseAuthProvider {
     }
   }
 
-  async signIn(options?: ProviderOptions): Promise<OAuthResult> {
+async signIn(options?: ProviderOptions): Promise<OAuthResult> {
     try {
       await this.initialize();
-      // Use Firebase popup flow — this avoids cross-origin opener/close issues
+
       const result = await signInWithPopup(auth, microsoftProvider);
-      const user = result.user;
+      const firebaseUser = result.user;
       const credential = FirebaseOAuthProvider.credentialFromResult(result);
 
       this.accessToken = credential?.accessToken || null;
 
-      // 🔽 Nuevo: Crear el usuario en el backend si no existe
-      if (user?.email) {
-        const backendUser = await userService.createIfNotExists(
-          user.displayName || 'Usuario Microsoft',
-          user.email,
-        );
-        if (backendUser && backendUser.id) {
-          localStorage.setItem('backendUserId', backendUser.id.toString());
+      const name: string = firebaseUser.displayName || 'Sin nombre';
+      const email: string = firebaseUser.email || `${firebaseUser.uid}@microsoft.com`;
+
+      if (!email) {
+        throw new Error('No se pudo obtener el email del usuario de Microsoft');
+      }
+
+      // 🔧 SOLUCIÓN: Verificar que backendUser e id existen
+      const backendUser: User | null = await userService.createIfNotExists(name, email);
+
+      if (!backendUser || !backendUser.id) {
+        throw new Error('❌ No se pudo crear o recuperar el usuario del backend');
+      }
+
+      console.log('✅ Usuario backend:', backendUser);
+
+      // Guardar datos en localStorage
+      localStorage.setItem('currentUserId', backendUser.id.toString());
+      localStorage.setItem('user', JSON.stringify(backendUser));
+
+      // 🔧 SOLUCIÓN: Sincronizar sesión OAuth (solo si tenemos accessToken)
+      if (this.accessToken) {
+        try {
+          await oauthSessionSync.syncOAuthSession(backendUser.id, this.accessToken);
+        } catch (syncError) {
+          console.error('⚠️ Error sincronizando sesión OAuth:', syncError);
         }
       }
 
-      // Return a normalized OAuthResult that the app expects
+      // Establecer sesión en securityService
+      securityService.setSession(backendUser, this.accessToken || '');
+
+      // 🔧 SOLUCIÓN: Return explícito y correcto
       return {
         user: {
-          id: user.uid,
-          email: user.email || '',
-          name: user.displayName || '',
-          picture: user.photoURL || '',
+          id: backendUser.id.toString(), // Convertir a string para OAuthResult
+          email: backendUser.email || email,
+          name: backendUser.name || name,
+          picture: firebaseUser.photoURL || '',
         },
-        accessToken: this.accessToken || null,
+        accessToken: this.accessToken,
         provider: this.provider,
-      } as any;
+      } as OAuthResult;
+
     } catch (error) {
+      console.error('❌ Error en Microsoft signIn:', error);
       throw this.handleError(error);
     }
   }
+
 
   async signOut(): Promise<void> {
     try {
@@ -97,21 +123,12 @@ export class MicrosoftAuthProvider extends BaseAuthProvider {
   }
 
   async refreshToken(): Promise<string | null> {
-    // When using Firebase client SDK (signInWithPopup) token refresh is handled
-    // internally by Firebase. If you implement a server-side exchange flow you
-    // should refresh tokens on the server and return them here. For now return
-    // null to indicate no client-side refresh performed.
     return null;
   }
 
   async exchangeCodeForToken(code: string): Promise<OAuthResult> {
-    // This method is not used when using Firebase popup flow. If you are using
-    // the authorization-code + redirect flow you'll need a backend endpoint to
-    // securely exchange the code for tokens (do not call the token endpoint
-    // directly from the browser with client secret). Throw an explicit error
-    // so callers know to use the backend exchange.
     throw new Error(
-      'exchangeCodeForToken is not implemented on the client. Use a backend exchange for authorization code flows.',
+      'exchangeCodeForToken is not implemented on the client. Use a backend exchange for authorization code flows.'
     );
   }
 

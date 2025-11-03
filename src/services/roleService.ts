@@ -210,3 +210,21 @@ class RoleService {
 }
 
 export const roleService = new RoleService();
+// Expose helpers for debugging in the browser console
+(window as any).roleService = roleService;
+
+// Debug helpers
+(roleService as any).debugDump = () => ({
+  roles: roleService['localRoles'],
+  userRoles: Object.fromEntries(roleService['localUserRoles'] || new Map()),
+});
+
+(roleService as any).forceReloadFromStorage = () => {
+  try {
+    roleService['loadFromLocalStorage']();
+    return (roleService as any).debugDump();
+  } catch (e) {
+    console.error('forceReloadFromStorage failed', e);
+    return null;
+  }
+};

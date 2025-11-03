@@ -77,13 +77,6 @@ const ListAnswer: React.FC = () => {
             variant="success"
           />
 
-          <GenericButton
-            label="Find Answer by User & Question"
-            onClick={() => navigate("/answers/find")}
-            variant="info"
-            size="md"
-          />
-
           {/* Volver a Users */}
           <GenericButton
             label="Back to Users"

@@ -1,18 +1,24 @@
 export interface RolePermission {
     id: string;
-    startAt: Date;
-    endAt: Date;
+    role_id: number;
+    permission_id: number;
+    created_at?: string;
+    updated_at?: string;
 }
 
 export interface CreateRolePermissionDTO {
-    roleId: number;
-    permissionId: number;
-    startAt: Date;
-    endAt: Date;
+    role_id: number;
+    permission_id: number;
 }
 
 export interface UpdateRolePermissionDTO {
     id: string;
-    startAt?: Date;
-    endAt?: Date;
+    role_id?: number;
+    permission_id?: number;
+}
+
+// Para la asignación masiva de permisos
+export interface BulkRolePermissionDTO {
+    role_id: number;
+    permission_ids: number[];
 }

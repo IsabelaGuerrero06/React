@@ -7,8 +7,7 @@ import {
   ProviderOptions,
 } from '../../../types/authTypes';
 import { BaseAuthProvider } from './baseProvider';
-
-
+import { oauthSessionSync } from '../OAuthSessionSyncService';
 import { 
   signInWithPopup, 
   signOut, 
@@ -16,55 +15,84 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider } from '../../../config/firebaseConfig';
 
+// 👇 Importamos el servicio del backend
+import { userService } from '../../../services/userService';
+
 export class GoogleAuthProvider extends BaseAuthProvider {
   readonly provider = AuthProvider.GOOGLE;
   readonly config: OAuthConfig;
 
   constructor(config: OAuthConfig) {
     super();
-    // Config solo para compatibilidad, Firebase no lo usa
     this.config = config;
   }
 
   async initialize(): Promise<void> {
     if (this.initialized) return;
-    console.log(' Google OAuth provider initialized with Firebase');
+    console.log('🔥 Google OAuth provider initialized with Firebase');
     this.initialized = true;
   }
 
-  //  MÉTODO PRINCIPAL: Igual que Microsoft
   async signIn(options?: ProviderOptions): Promise<OAuthResult> {
     try {
       await this.initialize();
       
-    
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       const credential = FirebaseGoogleProvider.credentialFromResult(result);
 
       this.accessToken = credential?.accessToken || null;
 
-      console.log(' Google sign-in successful:', {
+      console.log('✅ Google sign-in successful:', {
         userId: user.uid,
         email: user.email,
         name: user.displayName
       });
 
-  
+      let backendUserId: number | null = null;
+
+      // Crear el usuario en el backend si no existe
+      if (user?.email) {
+        try {
+          const backendUser = await userService.createIfNotExists(
+            user.displayName || 'Usuario Google',
+            user.email,
+          );
+          
+          if (backendUser && backendUser.id) {
+            backendUserId = backendUser.id;
+            console.log('💾 Backend user ID saved:', backendUserId);
+            localStorage.setItem('backendUserId', backendUserId.toString());
+            localStorage.setItem('currentUserId', backendUserId.toString());
+
+            // 🔧 SOLUCIÓN: Sincronizar sesión OAuth
+            if (this.accessToken) {
+              try {
+                await oauthSessionSync.syncOAuthSession(backendUserId, this.accessToken);
+              } catch (syncError) {
+                console.error('⚠️ Error sincronizando sesión OAuth:', syncError);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('❌ Error creating backend user:', error);
+        }
+      }
+
+      // 🔧 SOLUCIÓN: Return explícito y correcto
       return {
         user: {
-          id: user.uid,
+          id: backendUserId ? backendUserId.toString() : user.uid,
           email: user.email || '',
           name: user.displayName || '',
           picture: user.photoURL || ''
         },
-        accessToken: this.accessToken || null,
+        accessToken: this.accessToken,
         provider: this.provider
-      } as any;
+      } as OAuthResult;
     } catch (error: any) {
-      console.error('Google sign-in error:', error);
+      console.error('❌ Google sign-in error:', error);
       
-      // Mensajes de error más claros
       if (error.code === 'auth/popup-closed-by-user') {
         throw new Error('Sign-in cancelled by user');
       }
@@ -76,13 +104,17 @@ export class GoogleAuthProvider extends BaseAuthProvider {
     }
   }
 
+
   async signOut(): Promise<void> {
     try {
       await signOut(auth);
       this.accessToken = null;
-      console.log(' Google sign out successful');
+      // Limpiar localStorage
+      localStorage.removeItem('backendUserId');
+      localStorage.removeItem('currentUserId');
+      console.log('✅ Google sign out successful');
     } catch (error) {
-      console.error(' Error signing out:', error);
+      console.error('❌ Error signing out:', error);
       throw this.handleError(error);
     }
   }
@@ -96,11 +128,9 @@ export class GoogleAuthProvider extends BaseAuthProvider {
   }
 
   async refreshToken(): Promise<string | null> {
-    // Firebase maneja el refresh automáticamente
     return null;
   }
 
-  // Métodos no usados con Firebase popup
   async exchangeCodeForToken(code: string): Promise<OAuthResult> {
     throw new Error('Not needed with Firebase popup flow');
   }

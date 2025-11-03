@@ -1,75 +1,92 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-
-import { userService } from "../../services/userService";
 import Swal from "sweetalert2";
-
-import { User } from '../../models/User';
-import UserFormValidator from '../../components/UserFormValidator';
-import Breadcrumb from "../../components/Breadcrumb";
+import GenericForm, { FormField } from "../../components/GenericForm";
+import { userService } from "../../services/userService";
+import { User } from "../../models/User";
 
 const UpdateUser: React.FC = () => {
-    const { id } = useParams(); // Obtener el ID de la URL
-    
-    const navigate = useNavigate();
-    const [user, setUser] = useState<User | null>(null);
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
 
-    // Cargar datos del usuario después del montaje
-    useEffect(() => {
-        console.log("Id->"+id)
-        const fetchUser = async () => {
-            if (!id) return; // Evitar errores si el ID no está disponible
-            const userData = await userService.getUserById(parseInt(id));
-            setUser(userData);
-        };
-
-        fetchUser();
-    }, [id]);
-
-    const handleUpdateUser = async (theUser: User) => {
-        try {
-            const updatedUser = await userService.updateUser(theUser.id || 0, theUser);
-            if (updatedUser) {
-                Swal.fire({
-                    title: "Completado",
-                    text: "Se ha actualizado correctamente el registro",
-                    icon: "success",
-                    timer: 3000
-                });
-                navigate("/users/list"); // Redirección en React Router
-            } else {
-                Swal.fire({
-                    title: "Error",
-                    text: "Existe un problema al momento de actualizar el registro",
-                    icon: "error",
-                    timer: 3000
-                });
-            }
-        } catch (error) {
-            Swal.fire({
-                title: "Error",
-                text: "Existe un problema al momento de actualizar el registro",
-                icon: "error",
-                timer: 3000
-            });
-        }
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (!id) return;
+      const data = await userService.getUserById(Number(id));
+      setUser(data);
     };
+    fetchUser();
+  }, [id]);
 
-    if (!user) {
-        return <div>Cargando...</div>; // Muestra un mensaje de carga mientras se obtienen los datos
+  const formFields: FormField[] = [
+    {
+      name: "name",
+      label: "Name",
+      type: "text",
+      required: true,
+      placeholder: "Enter user name",
+    },
+    {
+      name: "email",
+      label: "Email",
+      type: "email",
+      required: true,
+      placeholder: "Enter user email",
+    },
+  ];
+
+  const handleUpdateUser = async (data: Record<string, any>) => {
+    try {
+      if (!id) return;
+      const updatedUser = await userService.updateUser(Number(id), data as User);
+      if (updatedUser) {
+        Swal.fire({
+          title: "Success",
+          text: "User updated successfully",
+          icon: "success",
+          timer: 2000,
+        });
+        navigate("/users/list");
+      } else {
+        Swal.fire({
+          title: "Error",
+          text: "There was a problem updating the user",
+          icon: "error",
+          timer: 2000,
+        });
+      }
+    } catch (error) {
+      Swal.fire({
+        title: "Error",
+        text: "An unexpected error occurred",
+        icon: "error",
+        timer: 2000,
+      });
     }
+  };
 
-    return (
-        <>
-            <Breadcrumb pageName="Actualizar Usuario" />
-            <UserFormValidator
-                handleUpdate={handleUpdateUser}
-                mode={2} // 2 significa actualización
-                user={user}
-            />
-        </>
-    );
+  if (!user) {
+    return <div className="p-6 text-gray-700">Loading user...</div>;
+  }
+
+  return (
+    <div className="p-6">
+      <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">
+        Update User
+      </h2>
+
+      <GenericForm
+        fields={formFields}
+        initialData={user}
+        onSubmit={handleUpdateUser}
+        submitLabel="Update"
+        cancelLabel="Cancel"
+        onCancel={() => navigate("/users/list")}
+        mode="edit"
+      />
+    </div>
+  );
 };
 
 export default UpdateUser;

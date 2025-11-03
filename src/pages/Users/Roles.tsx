@@ -6,6 +6,7 @@ import GenericModal from "../../components/GenericModal";
 import GenericForm, { FormField } from "../../components/GenericForm";
 import { useUILibrary } from "../../contexts/UILibraryContext";
 import { roleService, Role } from "../../services/roleService";
+import RolePermissionManager from "../../components/RolePermissionManger"; // NUEVA IMPORTACIÓN
 import Swal from "sweetalert2";
 
 const UsersRoles: React.FC = () => {
@@ -17,6 +18,7 @@ const UsersRoles: React.FC = () => {
   const [modalType, setModalType] = useState<"view" | "add" | "edit" | "permissions">("view");
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showPermissionManager, setShowPermissionManager] = useState(false); // NUEVO ESTADO
 
   // Cargar roles al montar el componente
   useEffect(() => {
@@ -103,6 +105,7 @@ const UsersRoles: React.FC = () => {
       });
     } else if (action === "permissions") {
       setSelectedRole(role);
+      setShowPermissionManager(true); // NUEVO: Abrir el RolePermissionManager
       setModalType("permissions");
       setIsModalOpen(true);
     } else if (action === "userRole") {
@@ -151,6 +154,12 @@ const UsersRoles: React.FC = () => {
         timer: 2000,
       });
     }
+  };
+
+  // NUEVA FUNCIÓN: Manejar el cierre del RolePermissionManager
+  const handlePermissionsClose = () => {
+    setShowPermissionManager(false);
+    setSelectedRole(null);
   };
 
   const getTitleStyles = () => {
@@ -213,7 +222,7 @@ const UsersRoles: React.FC = () => {
         onAction={handleAction}
       />
 
-      {/* Modal multifuncional */}
+      {/* Modal multifuncional (MANTENIDO COMPLETO) */}
       <GenericModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -271,7 +280,7 @@ const UsersRoles: React.FC = () => {
           />
         )}
 
-        {/* Gestión de permisos */}
+        {/* Gestión de permisos (MANTENIDO - ahora no se usa pero lo dejamos por si acaso) */}
         {modalType === "permissions" && selectedRole && (
           <div className="space-y-4">
             <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
@@ -330,6 +339,14 @@ const UsersRoles: React.FC = () => {
           </div>
         )}
       </GenericModal>
+
+      {/* NUEVO: Modal de gestión de permisos real */}
+      {showPermissionManager && selectedRole && (
+        <RolePermissionManager
+          role={selectedRole}
+          onClose={handlePermissionsClose}
+        />
+      )}
     </div>
   );
 };
