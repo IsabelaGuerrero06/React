@@ -2,6 +2,7 @@ import axios from "axios";
 import { User } from "../models/User";
 import { store } from "../store/store";
 import { setUser } from "../store/userSlice";
+import { oauthSessionSync } from './auth/OAuthSessionSyncService';
 import { getOrCreateProfileByUserId } from "../services/ProfileService";
 
 class SecurityService extends EventTarget {
@@ -30,8 +31,7 @@ class SecurityService extends EventTarget {
       const token =
         data?.token || data?.accessToken || data?.session || null;
       const userObj =
-        data?.user ??
-        (data?.user === undefined && data?.name ? data : null);
+        data?.user ?? (data?.user === undefined && data?.name ? data : null);
 
       if (token) {
         localStorage.setItem(
@@ -50,12 +50,15 @@ class SecurityService extends EventTarget {
         if (userObj.id) {
           localStorage.setItem("currentUserId", String(userObj.id));
 
-          // 🧩 Crear o verificar perfil automáticamente
-          try {
-            const profile = await getOrCreateProfileByUserId(userObj.id);
-            console.log("✅ Perfil verificado o creado automáticamente:", profile);
-          } catch (error) {
-            console.error("⚠️ Error creando/verificando perfil:", error);
+          // 🧩 Crear o verificar perfil automáticamente solo si NO estás creando usuarios como admin
+          const isAdminCreatingUser = window.location.pathname.includes("/users/create");
+          if (!isAdminCreatingUser) {
+            try {
+              const profile = await getOrCreateProfileByUserId(userObj.id);
+              console.log("✅ Perfil verificado o creado automáticamente:", profile);
+            } catch (error) {
+              console.error("⚠️ Error creando/verificando perfil:", error);
+            }
           }
         }
 
@@ -92,16 +95,26 @@ class SecurityService extends EventTarget {
       store.dispatch(setUser(user));
       this.dispatchEvent(new CustomEvent("userChange", { detail: user }));
 
-      // 🩵 Guardar ID del usuario
+      // Guardar ID del usuario
       if (user.id) {
         localStorage.setItem("currentUserId", String(user.id));
 
-        // 🧩 Crear o verificar perfil automáticamente
+        // 🆕 SINCRONIZAR SESIÓN OAuth CON BD
         try {
-          const profile = await getOrCreateProfileByUserId(user.id);
-          console.log("✅ Perfil verificado o creado automáticamente:", profile);
+          await oauthSessionSync.syncOAuthSession(user.id, token);
         } catch (error) {
-          console.error("⚠️ Error creando/verificando perfil:", error);
+          console.error('⚠️ Error sincronizando sesión OAuth:', error);
+        }
+
+        // Crear o verificar perfil automáticamente
+        const isAdminCreatingUser = window.location.pathname.includes("/users/create");
+        if (!isAdminCreatingUser) {
+          try {
+            const profile = await getOrCreateProfileByUserId(user.id);
+            console.log("✅ Perfil verificado o creado automáticamente:", profile);
+          } catch (error) {
+            console.error("⚠️ Error creando/verificando perfil:", error);
+          }
         }
       }
     }

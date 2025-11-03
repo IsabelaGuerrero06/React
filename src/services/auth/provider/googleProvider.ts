@@ -7,7 +7,7 @@ import {
   ProviderOptions,
 } from '../../../types/authTypes';
 import { BaseAuthProvider } from './baseProvider';
-
+import { oauthSessionSync } from '../OAuthSessionSyncService';
 import { 
   signInWithPopup, 
   signOut, 
@@ -49,7 +49,9 @@ export class GoogleAuthProvider extends BaseAuthProvider {
         name: user.displayName
       });
 
-      // 🔽 Crear el usuario en el backend si no existe
+      let backendUserId: number | null = null;
+
+      // Crear el usuario en el backend si no existe
       if (user?.email) {
         try {
           const backendUser = await userService.createIfNotExists(
@@ -58,25 +60,36 @@ export class GoogleAuthProvider extends BaseAuthProvider {
           );
           
           if (backendUser && backendUser.id) {
-            console.log('💾 Backend user ID saved:', backendUser.id);
-            localStorage.setItem('backendUserId', backendUser.id.toString());
-            localStorage.setItem('currentUserId', backendUser.id.toString());
+            backendUserId = backendUser.id;
+            console.log('💾 Backend user ID saved:', backendUserId);
+            localStorage.setItem('backendUserId', backendUserId.toString());
+            localStorage.setItem('currentUserId', backendUserId.toString());
+
+            // 🔧 SOLUCIÓN: Sincronizar sesión OAuth
+            if (this.accessToken) {
+              try {
+                await oauthSessionSync.syncOAuthSession(backendUserId, this.accessToken);
+              } catch (syncError) {
+                console.error('⚠️ Error sincronizando sesión OAuth:', syncError);
+              }
+            }
           }
         } catch (error) {
           console.error('❌ Error creating backend user:', error);
         }
       }
 
+      // 🔧 SOLUCIÓN: Return explícito y correcto
       return {
         user: {
-          id: user.uid,
+          id: backendUserId ? backendUserId.toString() : user.uid,
           email: user.email || '',
           name: user.displayName || '',
           picture: user.photoURL || ''
         },
-        accessToken: this.accessToken || null,
+        accessToken: this.accessToken,
         provider: this.provider
-      } as any;
+      } as OAuthResult;
     } catch (error: any) {
       console.error('❌ Google sign-in error:', error);
       
@@ -90,6 +103,7 @@ export class GoogleAuthProvider extends BaseAuthProvider {
       throw this.handleError(error);
     }
   }
+
 
   async signOut(): Promise<void> {
     try {

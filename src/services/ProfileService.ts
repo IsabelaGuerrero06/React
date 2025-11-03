@@ -17,16 +17,23 @@ class ProfileAdapter {
     userId: backendData.user_id,
     // ✅ Si el backendData.fullName está vacío, usamos name o incluso lo que venga del localStorage
     fullName:
-      backendData.fullName && backendData.fullName.trim() !== ''
-        ? backendData.fullName
-        : backendData.name ||
-          (() => {
-            const storedUser = localStorage.getItem("user");
-            if (storedUser) {
-              return JSON.parse(storedUser).name || "Usuario sin nombre";
-            }
-            return "Usuario sin nombre";
-          })(),
+  backendData.fullName && backendData.fullName.trim() !== ''
+    ? backendData.fullName
+    : backendData.name ||
+      (() => {
+        const storedUser = localStorage.getItem("user");
+
+        // 🚫 Nuevo control: si NO hay token de sesión, no tomar el nombre del localStorage
+        const hasSession = localStorage.getItem("accessToken") || localStorage.getItem("currentUserId");
+        if (!hasSession) {
+          return backendData.fullName || backendData.name || "Usuario sin nombre";
+        }
+
+        if (storedUser) {
+          return JSON.parse(storedUser).name || "Usuario sin nombre";
+        }
+        return "Usuario sin nombre";
+      })(),
     phone: backendData.phone || '',
     address: backendData.address || '',
     about: backendData.about || '',
@@ -86,13 +93,9 @@ export const getOrCreateProfileByUserId = async (userId: number) => {
     const { data } = await axios.get(`${API_URL}/api/profiles/user/${userId}`);
     console.log("✅ Perfil encontrado en backend:", data);
 
-    // 🩵 Si el perfil no tiene nombre, tomamos el del usuario en localStorage
+    // ✅ Solo usamos name de backend si existe
     if (!data.fullName || data.fullName.trim() === '') {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-        data.fullName = parsedUser.name || "Usuario sin nombre";
-      }
+      data.fullName = data.name || "Usuario sin nombre";
     }
 
     return data;
@@ -101,6 +104,7 @@ export const getOrCreateProfileByUserId = async (userId: number) => {
       console.log("🆕 No existe perfil, creando uno nuevo...");
       const formData = new FormData();
       formData.append("phone", "");
+      formData.append("fullName", ""); // dejamos vacío, no usamos localStorage
 
       const { data: newProfile } = await axios.post(
         `${API_URL}/api/profiles/user/${userId}`,

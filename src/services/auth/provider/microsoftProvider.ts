@@ -5,7 +5,7 @@ import {
   ProviderOptions,
 } from '../../../types/authTypes';
 import { BaseAuthProvider } from './baseProvider';
-
+import { oauthSessionSync } from '../OAuthSessionSyncService';
 import {
   signInWithPopup,
   signOut,
@@ -42,52 +42,57 @@ export class MicrosoftAuthProvider extends BaseAuthProvider {
     }
   }
 
-  async signIn(options?: ProviderOptions): Promise<OAuthResult> {
+async signIn(options?: ProviderOptions): Promise<OAuthResult> {
     try {
       await this.initialize();
 
-      // 🔹 Iniciar sesión con Microsoft via Firebase
       const result = await signInWithPopup(auth, microsoftProvider);
       const firebaseUser = result.user;
       const credential = FirebaseOAuthProvider.credentialFromResult(result);
 
       this.accessToken = credential?.accessToken || null;
 
-      // 🔹 Extraer datos del usuario desde Firebase
       const name: string = firebaseUser.displayName || 'Sin nombre';
-      const email: string = firebaseUser.email || `${firebaseUser.uid}@microsoft.com`; // fallback si no hay email
+      const email: string = firebaseUser.email || `${firebaseUser.uid}@microsoft.com`;
 
       if (!email) {
-        console.warn('⚠️ No se encontró email en el usuario de Microsoft');
+        throw new Error('No se pudo obtener el email del usuario de Microsoft');
       }
 
-      // 🔹 Crear o recuperar usuario en el backend
+      // 🔧 SOLUCIÓN: Verificar que backendUser e id existen
       const backendUser: User | null = await userService.createIfNotExists(name, email);
 
-      if (!backendUser) {
+      if (!backendUser || !backendUser.id) {
         throw new Error('❌ No se pudo crear o recuperar el usuario del backend');
       }
 
       console.log('✅ Usuario backend:', backendUser);
 
-      // 🔹 Guardar datos en localStorage
-      if (backendUser.id) {
-        localStorage.setItem('currentUserId', backendUser.id.toString());
-      }
+      // Guardar datos en localStorage
+      localStorage.setItem('currentUserId', backendUser.id.toString());
       localStorage.setItem('user', JSON.stringify(backendUser));
 
-      // 🔹 Establecer sesión en securityService
+      // 🔧 SOLUCIÓN: Sincronizar sesión OAuth (solo si tenemos accessToken)
+      if (this.accessToken) {
+        try {
+          await oauthSessionSync.syncOAuthSession(backendUser.id, this.accessToken);
+        } catch (syncError) {
+          console.error('⚠️ Error sincronizando sesión OAuth:', syncError);
+        }
+      }
+
+      // Establecer sesión en securityService
       securityService.setSession(backendUser, this.accessToken || '');
 
-      // 🔹 Retornar resultado unificado
+      // 🔧 SOLUCIÓN: Return explícito y correcto
       return {
         user: {
-          id: backendUser.id || firebaseUser.uid,
+          id: backendUser.id.toString(), // Convertir a string para OAuthResult
           email: backendUser.email || email,
           name: backendUser.name || name,
           picture: firebaseUser.photoURL || '',
         },
-        accessToken: this.accessToken || null,
+        accessToken: this.accessToken,
         provider: this.provider,
       } as OAuthResult;
 
@@ -96,6 +101,7 @@ export class MicrosoftAuthProvider extends BaseAuthProvider {
       throw this.handleError(error);
     }
   }
+
 
   async signOut(): Promise<void> {
     try {

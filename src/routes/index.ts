@@ -3,7 +3,7 @@ import ListUsers from '../pages/Users/ListUser';
 import UsersRoles from '../pages/Users/Roles';
 import CreateUser from '../pages/Users/CreateUser';
 import UpdateUser from '../pages/Users/UpdateUser';
-import Permissions from '../pages/Permissions/Permissions'; 
+import Permissions from '../pages/Permissions/Permissions';
 import CreateSecurityQuestions from '../pages/SecurityQuestions/CreateSecurityQuestion';
 import UpdateSecurityQuestions from '../pages/SecurityQuestions/UpdateSecurityQuestion';
 import ListSecurityQuestions from '../pages/SecurityQuestions/ListSecurityQuestion';
@@ -11,7 +11,7 @@ import ViewSecurityQuestion from '../pages/SecurityQuestions/ViewSecurityQuestio
 import ListAnswer from '../pages/Answers/ListAnswer';
 import CreateAnswer from '../pages/Answers/CreateAnswer';
 import UpdateAnswer from '../pages/Answers/UpdateAnswer';
-import UserSessionsWrapper from "../pages/UserSessionWrapper";
+import UserSessionsWrapper from '../pages/UserSessionWrapper';
 
 // Componentes de perfil
 const Profile = lazy(() => import('../pages/Profiles/Profile'));
@@ -30,8 +30,12 @@ const Tables = lazy(() => import('../pages/Tables'));
 const Alerts = lazy(() => import('../pages/UiElements/Alerts'));
 const Buttons = lazy(() => import('../pages/UiElements/Buttons'));
 const Demo = lazy(() => import('../pages/Demo'));
-const MicrosoftCallback = lazy(() => import('../pages/Authentication/MicrosoftCallback'));
-const OAuthPopupReceiver = lazy(() => import('../pages/Authentication/OAuthPopupReceiver'));
+const MicrosoftCallback = lazy(
+  () => import('../pages/Authentication/MicrosoftCallback'),
+);
+const OAuthPopupReceiver = lazy(
+  () => import('../pages/Authentication/OAuthPopupReceiver'),
+);
 
 const authRoutes = [
   {
@@ -43,7 +47,7 @@ const authRoutes = [
     path: '/auth/popup-receiver',
     title: 'OAuth Popup Receiver',
     component: OAuthPopupReceiver,
-  }
+  },
 ];
 
 const coreRoutes = [
@@ -106,21 +110,21 @@ const coreRoutes = [
     component: UpdateUser,
   },
   {
-    path: '/users/permissions',         
-    title: 'Permissions',              
-    component: Permissions,            
+    path: '/users/permissions',
+    title: 'Permissions',
+    component: Permissions,
   },
   // Sessions
   {
-    path: "/sessions/user/:id",
-    title: "User Sessions",
+    path: '/sessions/:id',
+    title: 'User Sessions',
     component: UserSessionsWrapper,
   },
   // Profiles
   {
     path: '/profile',
     title: 'Profile Default',
-    component: ProfileDefault, 
+    component: ProfileDefault,
   },
   {
     path: '/profile/:id',
