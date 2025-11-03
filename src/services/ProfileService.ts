@@ -12,27 +12,39 @@ class ProfileAdapter {
    * Convierte la respuesta del backend al modelo Profile del frontend
    */
   static toFrontendModel(backendData: any): Profile {
-    return {
-      id: backendData.id,
-      userId: backendData.user_id,
-      fullName: backendData.fullName || '',
-      phone: backendData.phone || '',
-      address: backendData.address || '',
-      about: backendData.about || '',
-      avatarUrl: backendData.photo 
-        ? this.buildImageUrl(backendData.photo) 
-        : undefined,
-      createdAt: backendData.created_at,
-      updatedAt: backendData.updated_at,
-    };
-  }
+  return {
+    id: backendData.id,
+    userId: backendData.user_id,
+    // ✅ Si el backendData.fullName está vacío, usamos name o incluso lo que venga del localStorage
+    fullName:
+      backendData.fullName && backendData.fullName.trim() !== ''
+        ? backendData.fullName
+        : backendData.name ||
+          (() => {
+            const storedUser = localStorage.getItem("user");
+            if (storedUser) {
+              return JSON.parse(storedUser).name || "Usuario sin nombre";
+            }
+            return "Usuario sin nombre";
+          })(),
+    phone: backendData.phone || '',
+    address: backendData.address || '',
+    about: backendData.about || '',
+    avatarUrl: backendData.photo
+      ? this.buildImageUrl(backendData.photo)
+      : undefined,
+    createdAt: backendData.created_at,
+    updatedAt: backendData.updated_at,
+  };
+}
+
 
   /**
    * Construye la URL completa de la imagen desde el path del backend
    */
   static buildImageUrl(photoPath: string | null): string | undefined {
     if (!photoPath) return undefined;
-    
+
     const filename = photoPath.split('/').pop();
     return `${API_URL}/api/profiles/${filename}`;
   }
@@ -71,21 +83,40 @@ export const getProfileByUserId = async (userId: number): Promise<Profile> => {
 // 🆕 NUEVA FUNCIÓN: obtiene el perfil o lo crea si no existe
 export const getOrCreateProfileByUserId = async (userId: number) => {
   try {
-    // 1️⃣ Consultar si el perfil existe
     const { data } = await axios.get(`${API_URL}/api/profiles/user/${userId}`);
+    console.log("✅ Perfil encontrado en backend:", data);
+
+    // 🩵 Si el perfil no tiene nombre, tomamos el del usuario en localStorage
+    if (!data.fullName || data.fullName.trim() === '') {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        data.fullName = parsedUser.name || "Usuario sin nombre";
+      }
+    }
+
     return data;
   } catch (error: any) {
-    // 2️⃣ Si no existe, crear uno nuevo
     if (error.response?.status === 404) {
+      console.log("🆕 No existe perfil, creando uno nuevo...");
+      const formData = new FormData();
+      formData.append("phone", "");
+
       const { data: newProfile } = await axios.post(
         `${API_URL}/api/profiles/user/${userId}`,
-        { fullName: '', phone: '', address: '', about: '' }
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
+
+      console.log("✅ Perfil creado automáticamente:", newProfile);
       return newProfile;
     }
+
+    console.error("❌ Error inesperado al obtener/crear perfil:", error);
     throw error;
   }
 };
+
 
 // GET /api/profiles/{profileId}
 export const getProfileById = async (profileId: number): Promise<Profile> => {
@@ -103,9 +134,9 @@ export const createProfile = async (userId: number, data: FormData): Promise<Pro
   try {
     const photoFile = data.get('photo') as File | null;
     const backendFormData = ProfileAdapter.toBackendFormData(data, photoFile || undefined);
-    
+
     const response = await axios.post(
-      `${API_URL}/api/profiles/user/${userId}`, 
+      `${API_URL}/api/profiles/user/${userId}`,
       backendFormData,
       { headers: { 'Content-Type': 'multipart/form-data' } }
     );
@@ -121,9 +152,9 @@ export const updateProfile = async (profileId: number, data: FormData): Promise<
   try {
     const photoFile = data.get('photo') as File | null;
     const backendFormData = ProfileAdapter.toBackendFormData(data, photoFile || undefined);
-    
+
     const response = await axios.put(
-      `${API_URL}/api/profiles/${profileId}`, 
+      `${API_URL}/api/profiles/${profileId}`,
       backendFormData,
       { headers: { 'Content-Type': 'multipart/form-data' } }
     );

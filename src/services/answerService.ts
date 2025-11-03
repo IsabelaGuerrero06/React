@@ -1,7 +1,7 @@
 import axios from "axios";
 import { Answer } from "../models/Answer";
 
-const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api") + "/answers";
+const API_URL = `${import.meta.env.VITE_API_URL}/api/answers`;
 
 class AnswerService {
   // Obtener todas las respuestas

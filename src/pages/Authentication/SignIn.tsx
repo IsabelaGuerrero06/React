@@ -27,36 +27,28 @@ const SignIn: React.FC = () => {
 
       // Si el resultado contiene directamente el usuario (Microsoft con Firebase)
       if ((result as any).user) {
-        const user = (result as any).user;
+        const firebaseUser = (result as any).user;
         const token = (result as any).accessToken || '';
 
-        // 🔹 Asegurar usuario en backend
+        // Extraer datos básicos de Firebase
+        const name = firebaseUser.displayName || 'Sin nombre';
+        const email = firebaseUser.email || '';
+
         try {
-          const users = await userService.getUsers();
-          const existingUser = users.find((u) => u.email === user.email);
+          // 🔹 Crear o recuperar el usuario en el backend
+          const backendUser = await userService.createIfNotExists(name, email);
 
-          let backendUser = existingUser;
-          if (existingUser) {
-            console.log('✅ Usuario ya existe en backend:', existingUser);
-          } else {
-            const newUser = await userService.createUser({
-              name: user.displayName || user.email,
-              email: user.email,
-            });
-
-            if (newUser) {
-              console.log('🆕 Usuario creado en backend:', newUser);
-              backendUser = newUser;
-            } else {
-              console.warn('⚠️ No se pudo crear el usuario en backend');
-            }
-          }
-
-          // 🔹 Guardar sesión local con ID del backend
+          // 🔹 Guardar la sesión local y el ID
           if (backendUser) {
+            localStorage.setItem('currentUserId', String(backendUser.id));
             SecurityService.setSession(backendUser, token);
+            console.log('✅ Sesión iniciada correctamente con:', backendUser);
             navigate('/');
             return;
+          } else {
+            console.warn(
+              '⚠️ No se pudo crear ni obtener el usuario en el backend',
+            );
           }
         } catch (error) {
           console.error('❌ Error sincronizando usuario con backend:', error);
