@@ -3,6 +3,7 @@ import ListUsers from '../pages/Users/ListUser';
 import UsersRoles from '../pages/Users/Roles';
 import CreateUser from '../pages/Users/CreateUser';
 import UpdateUser from '../pages/Users/UpdateUser';
+import UserAddress from '../pages/Users/UserAddress';
 import Permissions from '../pages/Permissions/Permissions';
 import ListSecurityQuestions from '../pages/SecurityQuestions/ListSecurityQuestion';
 import CreateSecurityQuestions from '../pages/SecurityQuestions/CreateSecurityQuestion';
@@ -134,6 +135,11 @@ const coreRoutes = [
     path: '/users/update/:id',
     title: 'Update Users',
     component: UpdateUser,
+  },
+  {
+    path: '/address/:userId',
+    title: 'User Address',
+    component: UserAddress,
   },
   // Permissions
   {
