@@ -6,7 +6,7 @@ import { Upload, User, Phone, Camera, ArrowLeft } from 'lucide-react';
 const CreateProfile = () => {
   const { id } = useParams(); // userId
   const navigate = useNavigate();
-  
+
   const [formData, setFormData] = useState({
     phone: '',
   });
@@ -50,7 +50,7 @@ const CreateProfile = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!id) {
       alert('❌ Error: No se proporcionó ID de usuario');
       return;
@@ -67,7 +67,7 @@ const CreateProfile = () => {
     try {
       const formDataToSend = new FormData();
       formDataToSend.append('phone', formData.phone);
-      
+
       // Agregar foto si existe
       if (selectedFile) {
         formDataToSend.append('photo', selectedFile);
@@ -75,12 +75,13 @@ const CreateProfile = () => {
 
       // POST /api/profiles/user/{userId}
       await createProfile(Number(id), formDataToSend);
-      
+
       alert('✅ Perfil creado exitosamente');
       navigate(`/profile/${id}`);
     } catch (error: any) {
       console.error('❌ Error al crear perfil:', error);
-      const errorMessage = error.response?.data?.error || 'Error al crear el perfil';
+      const errorMessage =
+        error.response?.data?.error || 'Error al crear el perfil';
       alert(`❌ ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
@@ -90,7 +91,9 @@ const CreateProfile = () => {
   if (!id) {
     return (
       <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
-        <p className="text-red-600">No se puede crear el perfil sin un ID de usuario.</p>
+        <p className="text-red-600">
+          No se puede crear el perfil sin un ID de usuario.
+        </p>
       </div>
     );
   }
@@ -119,13 +122,12 @@ const CreateProfile = () => {
 
           <form onSubmit={handleSubmit}>
             <div className="space-y-8">
-              
               {/* Sección de foto de perfil */}
               <div className="flex flex-col items-center pb-8 border-b border-gray-200">
                 <label className="block text-sm font-medium text-gray-700 mb-4 text-center">
                   Foto de perfil (opcional)
                 </label>
-                
+
                 <div className="relative">
                   <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-gray-200 bg-gray-100 shadow-lg">
                     {previewUrl ? (
@@ -140,7 +142,7 @@ const CreateProfile = () => {
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Botón de cámara flotante */}
                   <label className="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full cursor-pointer shadow-lg transition-all hover:scale-110">
                     <Camera size={20} />
@@ -155,7 +157,9 @@ const CreateProfile = () => {
 
                 {selectedFile && (
                   <div className="mt-4 flex items-center gap-2">
-                    <span className="text-sm text-green-600">✓ {selectedFile.name}</span>
+                    <span className="text-sm text-green-600">
+                      ✓ {selectedFile.name}
+                    </span>
                     <button
                       type="button"
                       onClick={handleRemovePhoto}
@@ -165,7 +169,7 @@ const CreateProfile = () => {
                     </button>
                   </div>
                 )}
-                
+
                 <p className="mt-3 text-sm text-gray-500 text-center">
                   JPG, PNG o GIF (máx. 5MB)
                 </p>
@@ -194,7 +198,8 @@ const CreateProfile = () => {
               {/* Nota informativa */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-800">
-                  <strong>ℹ️ Nota:</strong> Una vez creado tu perfil, podrás actualizarlo desde la sección de perfil.
+                  <strong>ℹ️ Nota:</strong> Una vez creado tu perfil, podrás
+                  actualizarlo desde la sección de perfil.
                 </p>
               </div>
 
@@ -203,7 +208,7 @@ const CreateProfile = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg"
+                  className="flex-1 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:from-green-400 disabled:to-green-500 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg transform hover:scale-105 disabled:scale-100"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2">
@@ -218,7 +223,7 @@ const CreateProfile = () => {
                   type="button"
                   onClick={() => navigate(-1)}
                   disabled={isSubmitting}
-                  className="px-8 py-3 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-700 rounded-lg font-medium transition"
+                  className="px-8 py-3 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg "
                 >
                   Cancelar
                 </button>

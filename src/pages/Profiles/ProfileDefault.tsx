@@ -19,7 +19,7 @@ const ProfileDefault = () => {
     if (currentUserId) {
       checkAndRedirect();
     } else {
-      console.warn("⚠️ No se encontró currentUserId en localStorage");
+      console.warn('⚠️ No se encontró currentUserId en localStorage');
       setIsChecking(false);
     }
   }, [currentUserId]);
@@ -66,7 +66,7 @@ const ProfileDefault = () => {
 
         <button
           onClick={() => navigate('/auth/signin')}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-all shadow-md hover:shadow-lg"
+          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 px-6 rounded-lg font-medium transition-all shadow-md hover:shadow-lg transform hover:scale-105"
         >
           Ir al inicio de sesión
         </button>
