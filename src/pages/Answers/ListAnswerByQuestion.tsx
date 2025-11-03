@@ -1,20 +1,20 @@
-// src/pages/answers/ListAnswer.tsx
-import { useNavigate } from "react-router-dom";
+// src/pages/answers/ListAnswersByQuestion.tsx
+import { useNavigate, useParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import { answerService } from "../../services/answerService";
 import { Answer } from "../../models/Answer";
 import { useEffect, useState } from "react";
 import GenericTable from "../../components/GenericTable";
-import GenericButton from "../../components/GenericButton";
+import GenericButton from "../../components/GenericButton"; 
 
-const ListAnswer: React.FC = () => {
+const ListAnswersByQuestion: React.FC = () => {
+  const { questionId } = useParams();
   const [answers, setAnswers] = useState<Answer[]>([]);
   const navigate = useNavigate();
 
-  // 🔹 Cargar todas las respuestas
   const fetchData = async () => {
     try {
-      const data = await answerService.getAnswers();
+      const data = await answerService.getAnswersByQuestion(Number(questionId));
       setAnswers(data);
     } catch (error) {
       console.error("Error fetching answers:", error);
@@ -23,9 +23,8 @@ const ListAnswer: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [questionId]);
 
-  // 🔹 Acciones de la tabla
   const handleAction = async (action: string, item: Answer) => {
     if (action === "view") {
       navigate(`/answers/${item.id}`);
@@ -40,22 +39,9 @@ const ListAnswer: React.FC = () => {
         confirmButtonText: "Yes, delete it",
       }).then(async (result) => {
         if (result.isConfirmed) {
-          try {
-            await answerService.deleteAnswer(item.id!);
-            Swal.fire({
-              title: "Deleted",
-              text: "Answer deleted successfully.",
-              icon: "success",
-              timer: 2000,
-            });
-            fetchData();
-          } catch (err) {
-            Swal.fire({
-              title: "Error",
-              text: "There was a problem deleting the answer.",
-              icon: "error",
-            });
-          }
+          await answerService.deleteAnswer(item.id!);
+          Swal.fire("Deleted!", "The answer has been deleted.", "success");
+          fetchData();
         }
       });
     }
@@ -63,37 +49,26 @@ const ListAnswer: React.FC = () => {
 
   return (
     <div className="p-4">
-      {/* Header con título y botones */}
+
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
-          All Answers
+          Answers for Question #{questionId}
         </h2>
 
         <div className="flex gap-2">
-          {/* Crear nueva respuesta */}
           <GenericButton
-            label="+ Add Answer"
-            onClick={() => navigate("/answers/create")}
-            variant="success"
-          />
-
-          <GenericButton
-            label="Find Answer by User & Question"
-            onClick={() => navigate("/answers/find")}
-            variant="info"
-            size="md"
-          />
-
-          {/* Volver a Users */}
-          <GenericButton
-            label="Back to Users"
-            onClick={() => navigate("/users/list")}
+            label="Back to Questions"
+            onClick={() => navigate("/security-questions/list")}
             variant="secondary"
+          />
+          <GenericButton
+            label="Back to All Answers"
+            onClick={() => navigate("/answers/list")}
+            variant="info"
           />
         </div>
       </div>
 
-      {/* Tabla genérica */}
       <GenericTable
         data={answers}
         columns={["id", "user_id", "security_question_id", "content"]}
@@ -108,4 +83,4 @@ const ListAnswer: React.FC = () => {
   );
 };
 
-export default ListAnswer;
+export default ListAnswersByQuestion;

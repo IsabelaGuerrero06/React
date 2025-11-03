@@ -4,13 +4,16 @@ import UsersRoles from '../pages/Users/Roles';
 import CreateUser from '../pages/Users/CreateUser';
 import UpdateUser from '../pages/Users/UpdateUser';
 import Permissions from '../pages/Permissions/Permissions'; 
+import ListSecurityQuestions from '../pages/SecurityQuestions/ListSecurityQuestion';
 import CreateSecurityQuestions from '../pages/SecurityQuestions/CreateSecurityQuestion';
 import UpdateSecurityQuestions from '../pages/SecurityQuestions/UpdateSecurityQuestion';
-import ListSecurityQuestions from '../pages/SecurityQuestions/ListSecurityQuestion';
 import ViewSecurityQuestion from '../pages/SecurityQuestions/ViewSecurityQuestion';
 import ListAnswer from '../pages/Answers/ListAnswer';
+import ListAnswersByUser from '../pages/Answers/ListAnswerByUser';
+import ListAnswersByQuestion from '../pages/Answers/ListAnswerByQuestion';
 import CreateAnswer from '../pages/Answers/CreateAnswer';
 import UpdateAnswer from '../pages/Answers/UpdateAnswer';
+import ViewAnswer from '../pages/Answers/ViewAnswer';
 import UserSessionsWrapper from "../pages/UserSessionWrapper";
 
 // Componentes de perfil
@@ -83,6 +86,21 @@ const coreRoutes = [
     path: '/answers/list',
     title: 'List Answers',
     component: ListAnswer,
+  },
+  {
+    path: '/answers/user/:userId',
+    title: 'List Answers By User',
+    component: ListAnswersByUser,
+  },
+  {
+    path: '/answers/question/:questionId',
+    title: 'List Answers By Question',
+    component: ListAnswersByQuestion,
+  },
+  {
+    path: '/answers/:id',
+    title: 'List An Specific Answer',
+    component: ViewAnswer,
   },
   // Users
   {

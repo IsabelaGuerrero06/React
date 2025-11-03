@@ -1,68 +1,68 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import { SecurityQuestion } from "../../models/SecurityQuestion";
-import { securityQuestionService } from "../../services/securityQuestionService";
+import { Answer } from "../../models/Answer";
+import { answerService } from "../../services/answerService";
 import GenericTable from "../../components/GenericTable";
 import GenericButton from "../../components/GenericButton";
 
-const ViewSecurityQuestion: React.FC = () => {
+const ViewAnswer: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   // 👇 usamos "any" para aceptar también created_at / updated_at
-  const [question, setQuestion] = useState<any | null>(null);
+  const [answer, setAnswer] = useState<any | null>(null);
 
   useEffect(() => {
-    const fetchQuestion = async () => {
+    const fetchAnswer = async () => {
       if (!id) return;
-      const data = await securityQuestionService.getById(parseInt(id));
+      const data = await answerService.getAnswerById(parseInt(id));
       if (!data) {
         Swal.fire({
           title: "Not Found",
-          text: "No se encontró la pregunta de seguridad.",
+          text: "The answer could not be found.",
           icon: "error",
           timer: 2500,
         });
-        navigate("/security-questions/list");
+        navigate("/answers/list");
         return;
       }
-      setQuestion(data);
+      setAnswer(data);
     };
-    fetchQuestion();
+    fetchAnswer();
   }, [id, navigate]);
 
-  if (!question) {
-    return <div className="p-4 text-gray-600">Cargando pregunta...</div>;
+  if (!answer) {
+    return <div className="p-4 text-gray-600">Loading answer...</div>;
   }
 
-  const questionData = [question];
+  const answerData = [answer];
 
-  const handleAction = async (action: string, item: SecurityQuestion) => {
-    if (action === "back") navigate("/security-questions/list");
-    else if (action === "edit") navigate(`/security-questions/update/${item.id}`);
+  const handleAction = async (action: string, item: Answer) => {
+    if (action === "back") navigate("/answers/list");
+    else if (action === "edit") navigate(`/answers/update/${item.id}`);
     else if (action === "delete") {
       Swal.fire({
-        title: "Eliminar",
-        text: "¿Seguro que deseas eliminar esta pregunta?",
+        title: "Delete",
+        text: "Are you sure you want to delete this answer?",
         icon: "warning",
         showCancelButton: true,
-        confirmButtonText: "Sí, eliminar",
-        cancelButtonText: "Cancelar",
+        confirmButtonText: "Yes, delete it",
+        cancelButtonText: "Cancel",
       }).then(async (result) => {
         if (result.isConfirmed) {
-          const success = await securityQuestionService.delete(item.id!);
+          const success = await answerService.deleteAnswer(item.id!);
           if (success) {
             Swal.fire({
-              title: "Eliminada",
-              text: "La pregunta ha sido eliminada correctamente.",
+              title: "Deleted",
+              text: "The answer has been deleted successfully.",
               icon: "success",
               timer: 2500,
             });
-            navigate("/security-questions/list");
+            navigate("/answers/list");
           } else {
             Swal.fire({
               title: "Error",
-              text: "No se pudo eliminar la pregunta.",
+              text: "The answer could not be deleted.",
               icon: "error",
             });
           }
@@ -79,31 +79,39 @@ const ViewSecurityQuestion: React.FC = () => {
   };
 
   // 👇 mapeamos los campos incluyendo las fechas
-  const displayedData = questionData.map((q: any) => ({
-    id: q.id,
-    name: q.name,
-    description: q.description,
-    created_at: formatDate(q.created_at),
-    updated_at: formatDate(q.updated_at),
+  const displayedData = answerData.map((a: any) => ({
+    id: a.id,
+    user_id: a.user_id,
+    security_question_id: a.security_question_id,
+    content: a.content,
+    created_at: formatDate(a.created_at),
+    updated_at: formatDate(a.updated_at),
   }));
 
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
-          Security Question Details
+          Answer Details
         </h2>
 
         <GenericButton
           label="Back to List"
-          onClick={() => handleAction("back", question)}
+          onClick={() => handleAction("back", answer)}
           variant="secondary"
         />
       </div>
 
       <GenericTable
         data={displayedData}
-        columns={["id", "name", "description", "created_at", "updated_at"]}
+        columns={[
+          "id",
+          "user_id",
+          "security_question_id",
+          "content",
+          "created_at",
+          "updated_at",
+        ]}
         actions={[
           { name: "edit", label: "Edit", variant: "primary" },
           { name: "delete", label: "Delete", variant: "danger" },
@@ -114,4 +122,4 @@ const ViewSecurityQuestion: React.FC = () => {
   );
 };
 
-export default ViewSecurityQuestion;
+export default ViewAnswer;
