@@ -1,60 +1,74 @@
-import React, { useState } from 'react'; // Asegúrate de importar useState
-import { User } from '../../models/User';
-import UserFormValidator from '../../components/UserFormValidator';
-
-import Swal from 'sweetalert2';
-import { userService } from "../../services/userService";
-import Breadcrumb from '../../components/Breadcrumb';
+import React from "react";
 import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
+import GenericForm, { FormField } from "../../components/GenericForm";
+import { userService } from "../../services/userService";
+import { User } from "../../models/User";
 
 const CreateUser: React.FC = () => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    // Estado para almacenar el usuario a editar
+  const formFields: FormField[] = [
+    {
+      name: "name",
+      label: "Name",
+      type: "text",
+      required: true,
+      placeholder: "Enter user name",
+    },
+    {
+      name: "email",
+      label: "Email",
+      type: "email",
+      required: true,
+      placeholder: "Enter user email",
+    },
+  ];
 
-    // Lógica de creación
-    const handleCreateUser = async (user: User) => {
+  const handleCreateUser = async (data: Record<string, any>) => {
+    try {
+      const createdUser = await userService.createUser(data as User);
+      if (createdUser) {
+        Swal.fire({
+          title: "Success",
+          text: "User created successfully",
+          icon: "success",
+          timer: 2000,
+        });
+        navigate("/users/list");
+      } else {
+        Swal.fire({
+          title: "Error",
+          text: "There was a problem creating the user",
+          icon: "error",
+          timer: 2000,
+        });
+      }
+    } catch (error) {
+      Swal.fire({
+        title: "Error",
+        text: "An unexpected error occurred",
+        icon: "error",
+        timer: 2000,
+      });
+    }
+  };
 
-        try {
-            const createdUser = await userService.createUser(user);
-            
-            if (createdUser) {
-                Swal.fire({
-                    title: "Completado",
-                    text: "Se ha creado correctamente el registro",
-                    icon: "success",
-                    timer: 3000
-                })
-                console.log("Usuario creado con éxito:", createdUser);
-                navigate("/users/list");
-            } else {
-                Swal.fire({
-                    title: "Error",
-                    text: "Existe un problema al momento de crear el registro",
-                    icon: "error",
-                    timer: 3000
-                })
-            }
-        } catch (error) {
-            Swal.fire({
-                title: "Error",
-                text: "Existe un problema al momento de crear el registro",
-                icon: "error",
-                timer: 3000
-            })
-        }
-    };
-    return (
-        <div>
-            {/* Formulario para crear un nuevo usuario */}
-            <h2>Create User</h2>
-            <Breadcrumb pageName="Crear Usuario" />
-            <UserFormValidator
-                handleCreate={handleCreateUser}
-                mode={1} // 1 significa creación
-            />
-        </div>
-    );
+  return (
+    <div className="p-6">
+      <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">
+        Create User
+      </h2>
+
+      <GenericForm
+        fields={formFields}
+        onSubmit={handleCreateUser}
+        submitLabel="Create"
+        cancelLabel="Cancel"
+        onCancel={() => navigate("/users/list")}
+      />
+    </div>
+  );
 };
 
 export default CreateUser;

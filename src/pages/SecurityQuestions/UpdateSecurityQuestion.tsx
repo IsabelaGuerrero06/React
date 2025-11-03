@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import { SecurityQuestion } from "../../models/SecurityQuestion";
-import Breadcrumb from "../../components/Breadcrumb";
-import SecurityQuestionFormValidator from "../../components/SecurityQuestionFormValidator";
+import GenericForm, { FormField } from "../../components/GenericForm";
 import { securityQuestionService } from "../../services/securityQuestionService";
+import { SecurityQuestion } from "../../models/SecurityQuestion";
 
 const UpdateSecurityQuestion: React.FC = () => {
   const { id } = useParams();
@@ -14,63 +13,84 @@ const UpdateSecurityQuestion: React.FC = () => {
   useEffect(() => {
     const fetchQuestion = async () => {
       if (!id) return;
-      const data = await securityQuestionService.getById(parseInt(id));
-      if (!data) {
-        // manejar error (redirigir o mostrar mensaje)
-        console.error("Preguntas de seguridad: no se encontró el registro");
-        return;
-      }
-      setQuestion(data);
+      const data = await securityQuestionService.getById(Number(id));
+      if (data) setQuestion(data);
+      else console.error("Security question not found");
     };
     fetchQuestion();
   }, [id]);
 
-  const handleUpdateQuestion = async (updatedQuestion: SecurityQuestion) => {
+  const formFields: FormField[] = [
+    {
+      name: "name",
+      label: "Name",
+      type: "text",
+      required: true,
+      placeholder: "Enter security question name",
+    },
+    {
+      name: "description",
+      label: "Description",
+      type: "textarea",
+      required: true,
+      placeholder: "Enter security question description",
+    },
+  ];
+
+  const handleUpdateQuestion = async (data: Record<string, any>) => {
     try {
-      const updated = await securityQuestionService.update(
-        updatedQuestion.id || 0,
-        updatedQuestion
-      );
+      if (!id) return;
+      const updated = await securityQuestionService.update(Number(id), {
+        name: data.name,
+        description: data.description,
+      });
 
       if (updated) {
         Swal.fire({
-          title: "Completado",
-          text: "Se ha actualizado correctamente la pregunta de seguridad",
+          title: "Success",
+          text: "Security question updated successfully",
           icon: "success",
-          timer: 3000,
+          timer: 2000,
         });
         navigate("/security-questions/list");
       } else {
         Swal.fire({
           title: "Error",
-          text: "Existe un problema al momento de actualizar el registro",
+          text: "There was a problem updating the record",
           icon: "error",
-          timer: 3000,
+          timer: 2000,
         });
       }
     } catch (error) {
       Swal.fire({
         title: "Error",
-        text: "Existe un problema al momento de actualizar el registro",
+        text: "An unexpected error occurred",
         icon: "error",
-        timer: 3000,
+        timer: 2000,
       });
     }
   };
 
   if (!question) {
-    return <div>Cargando...</div>;
+    return <div className="p-6 text-gray-700">Loading security question...</div>;
   }
 
   return (
-    <>
-      <Breadcrumb pageName="Actualizar Pregunta de Seguridad" />
-      <SecurityQuestionFormValidator
-        handleUpdate={handleUpdateQuestion}
-        mode={2} // modo 2 = actualización
-        question={question}
+    <div className="p-6">
+      <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">
+        Update Security Question
+      </h2>
+
+      <GenericForm
+        fields={formFields}
+        initialData={question}
+        onSubmit={handleUpdateQuestion}
+        submitLabel="Update"
+        cancelLabel="Cancel"
+        onCancel={() => navigate("/security-questions/list")}
+        mode="edit"
       />
-    </>
+    </div>
   );
 };
 
