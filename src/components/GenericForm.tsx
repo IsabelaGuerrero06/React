@@ -40,8 +40,15 @@ const GenericForm: React.FC<GenericFormProps> = ({
 
   // Actualizar formData cuando cambie initialData (útil para modo edición)
   useEffect(() => {
-    setFormData(initialData);
-  }, [initialData]);
+    // Evita renders infinitos comparando los datos
+    setFormData(prev => {
+      const prevString = JSON.stringify(prev);
+      const nextString = JSON.stringify(initialData);
+      return prevString === nextString ? prev : initialData;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(initialData)]);
+
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>

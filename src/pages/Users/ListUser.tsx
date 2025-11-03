@@ -111,6 +111,7 @@ const ListUsers: React.FC = () => {
       navigate(`/security-questions/list`);
     } else if (action === "answers") {
       navigate(`/answers/user/${item.id}`);
+    } else if (action === "devices") {
       navigate(`/devices/${userWithRole.id}`);
     } else if (action === "passwords") {
       navigate(`/passwords/${userWithRole.id}`);
