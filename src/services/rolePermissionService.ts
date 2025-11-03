@@ -1,30 +1,87 @@
 import axios from 'axios';
-import { RolePermission, CreateRolePermissionDTO, UpdateRolePermissionDTO } from '../models/RolePermission';
+import { RolePermission, CreateRolePermissionDTO, UpdateRolePermissionDTO, BulkRolePermissionDTO } from '../models/RolePermission';
+import securityService from './securityService';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+class RolePermissionService {
+    private readonly baseURL: string;
 
-export const rolePermissionService = {
-    getByRoleId: async (roleId: number): Promise<RolePermission[]> => {
-        const response = await axios.get(`${API_URL}/roles/${roleId}/permissions`);
-        return response.data;
-    },
-
-    getByPermissionId: async (permissionId: number): Promise<RolePermission[]> => {
-        const response = await axios.get(`${API_URL}/permissions/${permissionId}/roles`);
-        return response.data;
-    },
-
-    assign: async (rolePermission: CreateRolePermissionDTO): Promise<RolePermission> => {
-        const response = await axios.post(`${API_URL}/role-permissions`, rolePermission);
-        return response.data;
-    },
-
-    update: async (rolePermission: UpdateRolePermissionDTO): Promise<RolePermission> => {
-        const response = await axios.put(`${API_URL}/role-permissions/${rolePermission.id}`, rolePermission);
-        return response.data;
-    },
-
-    revoke: async (id: string): Promise<void> => {
-        await axios.delete(`${API_URL}/role-permissions/${id}`);
+    constructor() {
+        this.baseURL = `${import.meta.env.VITE_API_URL}/api`;
     }
-};
+
+    private getHeaders() {
+        const token = securityService.getToken();
+        return {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        };
+    }
+
+    async getAll(): Promise<RolePermission[]> {
+        const response = await axios.get(`${this.baseURL}/role-permissions`, {
+            headers: this.getHeaders()
+        });
+        return response.data;
+    }
+
+    async getById(id: string): Promise<RolePermission> {
+        const response = await axios.get(`${this.baseURL}/role-permissions/${id}`, {
+            headers: this.getHeaders()
+        });
+        return response.data;
+    }
+
+    async getByRoleId(roleId: number): Promise<RolePermission[]> {
+        const response = await axios.get(`${this.baseURL}/role-permissions/role/${roleId}`, {
+            headers: this.getHeaders()
+        });
+        return response.data;
+    }
+
+    async getByPermissionId(permissionId: number): Promise<RolePermission[]> {
+        const response = await axios.get(`${this.baseURL}/role-permissions/permission/${permissionId}`, {
+            headers: this.getHeaders()
+        });
+        return response.data;
+    }
+
+    async create(roleId: number, permissionId: number): Promise<RolePermission> {
+        const response = await axios.post(
+            `${this.baseURL}/role-permissions/role/${roleId}/permission/${permissionId}`, 
+            {},
+            { headers: this.getHeaders() }
+        );
+        return response.data;
+    }
+
+    async delete(roleId: number, permissionId: number): Promise<void> {
+        await axios.delete(
+            `${this.baseURL}/role-permissions/role/${roleId}/permission/${permissionId}`,
+            { headers: this.getHeaders() }
+        );
+    }
+
+    async deleteById(id: string): Promise<void> {
+        await axios.delete(`${this.baseURL}/role-permissions/${id}`, {
+            headers: this.getHeaders()
+        });
+    }
+
+    // Método para asignación masiva
+    async bulkAssign(roleId: number, permissionIds: number[]): Promise<void> {
+        // Primero revocar todos los permisos existentes
+        const existingPermissions = await this.getByRoleId(roleId);
+        
+        // Revocar permisos existentes
+        for (const rp of existingPermissions) {
+            await this.deleteById(rp.id);
+        }
+
+        // Asignar nuevos permisos
+        for (const permissionId of permissionIds) {
+            await this.create(roleId, permissionId);
+        }
+    }
+}
+
+export const rolePermissionService = new RolePermissionService();

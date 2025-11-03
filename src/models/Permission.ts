@@ -12,6 +12,13 @@ export interface Permission {
 }
 
 /**
+ * Permiso extendido para uso en gestión de roles (incluye has_permission)
+ */
+export interface PermissionWithStatus extends Permission {
+    has_permission?: boolean;
+}
+
+/**
  * DTO para crear permisos - Todos los campos requeridos según backend
  */
 export interface CreatePermissionDTO {
@@ -46,6 +53,6 @@ export enum HttpMethod {
  */
 export interface GroupedPermissions {
     entity: string;
-    permissions: Permission[];
+    permissions: PermissionWithStatus[]; // Cambiar a PermissionWithStatus
     has_permission?: boolean; // Para asignación de roles
 }
