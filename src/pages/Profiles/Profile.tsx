@@ -10,27 +10,23 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [profileExists, setProfileExists] = useState(false);
 
-  // 🔹 Nuevo: obtener el ID desde localStorage si no está en la URL
-  const storedId = localStorage.getItem("backendUserId");
-  const userId = id || storedId;
-
   useEffect(() => {
-    if (!userId) return;
+    if (!id) return;
     loadProfile();
-  }, [userId]);
+  }, [id]);
 
   const loadProfile = async () => {
-    if (!userId) return;
-
+    if (!id) return;
+    
     setIsLoading(true);
     try {
       // Verificar si el perfil existe
-      const exists = await checkProfileExists(Number(userId));
+      const exists = await checkProfileExists(Number(id));
       setProfileExists(exists);
-
+      
       if (exists) {
         // Si existe, cargar los datos
-        const data = await getProfileByUserId(Number(userId));
+        const data = await getProfileByUserId(Number(id));
         console.log('📦 Datos recibidos del backend:', data);
         setProfile(data);
       }
@@ -41,8 +37,9 @@ const Profile = () => {
     }
   };
 
-  // 🔸 Si no hay ID en la URL ni guardado, mostrar mensaje de error
-  if (!userId) {
+  // Si no hay ID, probablemente es el usuario actual
+  // Mostrar el mensaje de crear perfil
+  if (!id) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
         <div className="bg-white rounded-lg shadow-lg p-10 max-w-md text-center">
@@ -53,14 +50,22 @@ const Profile = () => {
             Perfil no encontrado
           </h2>
           <p className="text-gray-600 mb-8">
-            No se pudo identificar al usuario. Inicia sesión nuevamente.
+            Este usuario aún no ha creado su perfil. Crea uno ahora para comenzar.
           </p>
           <button
-            onClick={() => navigate("/auth/signin")}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium shadow-md"
+            onClick={() => {
+              // Si no hay ID, redirigir a una página de error o pedir el ID
+              alert('⚠️ No se puede crear un perfil sin un ID de usuario válido');
+            }}
+            className="w-full bg-gray-400 cursor-not-allowed text-white py-3 px-6 rounded-lg font-medium"
+            disabled
           >
-            Iniciar sesión
+            <UserPlus size={20} className="inline mr-2" />
+            Crear Perfil
           </button>
+          <p className="mt-4 text-sm text-gray-500">
+            Por favor, accede desde la lista de usuarios
+          </p>
         </div>
       </div>
     );
@@ -92,7 +97,7 @@ const Profile = () => {
             Este usuario aún no ha creado su perfil. Crea uno ahora para comenzar.
           </p>
           <button
-            onClick={() => navigate(`/profiles/create/${userId}`)}
+            onClick={() => navigate(`/profiles/create/${id}`)}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
           >
             <UserPlus size={20} />
@@ -118,9 +123,10 @@ const Profile = () => {
         <div className="flex gap-8">
           {/* Contenedor principal del perfil */}
           <main className="flex-1 bg-white rounded-lg shadow-sm p-8 relative">
-            {/* Botón de actualizar */}
+            
+            {/* Botón de actualizar en la esquina superior derecha */}
             <Link
-              to={`/profile/update/${userId}`}
+              to={`/profile/update/${id}`}
               className="absolute top-6 right-6 inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-5 rounded-lg transition-all shadow-md hover:shadow-lg transform hover:scale-105"
             >
               <Edit size={18} />

@@ -15,7 +15,7 @@ class ProfileAdapter {
     return {
       id: backendData.id,
       userId: backendData.user_id,
-      fullName: backendData.fullName || backendData.name || '',
+      fullName: backendData.fullName || '',
       phone: backendData.phone || '',
       address: backendData.address || '',
       about: backendData.about || '',
@@ -69,29 +69,21 @@ export const getProfileByUserId = async (userId: number): Promise<Profile> => {
 };
 
 // 🆕 NUEVA FUNCIÓN: obtiene el perfil o lo crea si no existe
-export const getOrCreateProfileByUserId = async (userId: number): Promise<Profile | null> => {
+export const getOrCreateProfileByUserId = async (userId: number) => {
   try {
-    const response = await axios.get(`${API_URL}/api/profiles/user/${userId}`);
-    return ProfileAdapter.toFrontendModel(response.data);
+    // 1️⃣ Consultar si el perfil existe
+    const { data } = await axios.get(`${API_URL}/api/profiles/user/${userId}`);
+    return data;
   } catch (error: any) {
-    if (axios.isAxiosError(error) && error.response?.status === 404) {
-      console.log("🆕 No existe perfil, creando uno nuevo...");
-      try {
-        const formData = new FormData();
-        const newProfileResponse = await axios.post(
-          `${API_URL}/api/profiles/user/${userId}`,
-          formData,
-          { headers: { 'Content-Type': 'multipart/form-data' } }
-        );
-        console.log("✅ Perfil creado automáticamente:", newProfileResponse.data);
-        return ProfileAdapter.toFrontendModel(newProfileResponse.data);
-      } catch (createError) {
-        console.error("❌ Error al crear el perfil automáticamente:", createError);
-        return null;
-      }
+    // 2️⃣ Si no existe, crear uno nuevo
+    if (error.response?.status === 404) {
+      const { data: newProfile } = await axios.post(
+        `${API_URL}/api/profiles/user/${userId}`,
+        { fullName: '', phone: '', address: '', about: '' }
+      );
+      return newProfile;
     }
-    console.error("❌ Error al obtener perfil:", error);
-    return null;
+    throw error;
   }
 };
 

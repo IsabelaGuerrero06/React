@@ -6,11 +6,7 @@ import {
 } from '../../../types/authTypes';
 import { BaseAuthProvider } from './baseProvider';
 
-import {
-  signInWithPopup,
-  signOut,
-  OAuthProvider as FirebaseOAuthProvider,
-} from 'firebase/auth';
+import { signInWithPopup, signOut, OAuthProvider as FirebaseOAuthProvider } from 'firebase/auth';
 import { auth, microsoftProvider } from '../../../config/firebaseConfig';
 
 // 👇 Importamos el servicio del backend
@@ -52,13 +48,7 @@ export class MicrosoftAuthProvider extends BaseAuthProvider {
 
       // 🔽 Nuevo: Crear el usuario en el backend si no existe
       if (user?.email) {
-        const backendUser = await userService.createIfNotExists(
-          user.displayName || 'Usuario Microsoft',
-          user.email,
-        );
-        if (backendUser && backendUser.id) {
-          localStorage.setItem('backendUserId', backendUser.id.toString());
-        }
+        await userService.createIfNotExists(user.displayName || "Usuario Microsoft", user.email);
       }
 
       // Return a normalized OAuthResult that the app expects
@@ -67,10 +57,10 @@ export class MicrosoftAuthProvider extends BaseAuthProvider {
           id: user.uid,
           email: user.email || '',
           name: user.displayName || '',
-          picture: user.photoURL || '',
+          picture: user.photoURL || ''
         },
         accessToken: this.accessToken || null,
-        provider: this.provider,
+        provider: this.provider
       } as any;
     } catch (error) {
       throw this.handleError(error);
@@ -110,9 +100,7 @@ export class MicrosoftAuthProvider extends BaseAuthProvider {
     // securely exchange the code for tokens (do not call the token endpoint
     // directly from the browser with client secret). Throw an explicit error
     // so callers know to use the backend exchange.
-    throw new Error(
-      'exchangeCodeForToken is not implemented on the client. Use a backend exchange for authorization code flows.',
-    );
+    throw new Error('exchangeCodeForToken is not implemented on the client. Use a backend exchange for authorization code flows.');
   }
 
   async getUserInfo(accessToken: string): Promise<any> {

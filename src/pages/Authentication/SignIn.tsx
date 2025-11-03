@@ -35,6 +35,7 @@ const SignIn: React.FC = () => {
           const users = await userService.getUsers();
           const existingUser = users.find((u) => u.email === user.email);
 
+          let backendUser = existingUser;
           if (existingUser) {
             console.log('✅ Usuario ya existe en backend:', existingUser);
           } else {
@@ -42,16 +43,24 @@ const SignIn: React.FC = () => {
               name: user.displayName || user.email,
               email: user.email,
             });
-            console.log('🆕 Usuario creado en backend:', newUser);
+
+            if (newUser) {
+              console.log('🆕 Usuario creado en backend:', newUser);
+              backendUser = newUser;
+            } else {
+              console.warn('⚠️ No se pudo crear el usuario en backend');
+            }
+          }
+
+          // 🔹 Guardar sesión local con ID del backend
+          if (backendUser) {
+            SecurityService.setSession(backendUser, token);
+            navigate('/');
+            return;
           }
         } catch (error) {
           console.error('❌ Error sincronizando usuario con backend:', error);
         }
-
-        // Guardar sesión local
-        SecurityService.setSession(user, token);
-        navigate('/');
-        return;
       }
 
       // Si obtuvimos un código de autorización, enviarlo al backend
@@ -119,7 +128,6 @@ const SignIn: React.FC = () => {
       console.error('Social sign-in error:', err);
       setError(err.message || 'Authentication failed. Please try again.');
 
-      // Log detallado del error
       if (err.code) console.error('Error code:', err.code);
       if (err.details) console.error('Error details:', err.details);
     } finally {
@@ -209,7 +217,6 @@ const SignIn: React.FC = () => {
                     onSubmit={handleSubmit}
                     className="grid grid-cols-1 gap-4 bg-white rounded-md"
                   >
-                    {/* Email */}
                     <div>
                       <label
                         htmlFor="email"
@@ -231,7 +238,6 @@ const SignIn: React.FC = () => {
                       />
                     </div>
 
-                    {/* Password */}
                     <div>
                       <label
                         htmlFor="password"
@@ -253,7 +259,6 @@ const SignIn: React.FC = () => {
                       />
                     </div>
 
-                    {/* Submit Button */}
                     <button
                       type="submit"
                       className="w-full cursor-pointer rounded-lg border border-primary bg-primary p-4 text-white transition hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -262,14 +267,12 @@ const SignIn: React.FC = () => {
                       {loading ? 'Signing in...' : 'Sign In'}
                     </button>
 
-                    {/* Divider */}
                     <div className="flex items-center justify-center">
                       <span className="block h-px w-full bg-stroke dark:bg-strokedark"></span>
                       <span className="px-4 text-sm text-body">OR</span>
                       <span className="block h-px w-full bg-stroke dark:bg-strokedark"></span>
                     </div>
 
-                    {/* Social Login Buttons */}
                     <div className="space-y-3">
                       <SocialSignInButton
                         provider={AuthProvider.GOOGLE}
