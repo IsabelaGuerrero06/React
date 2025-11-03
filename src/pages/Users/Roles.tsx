@@ -105,6 +105,8 @@ const UsersRoles: React.FC = () => {
       setSelectedRole(role);
       setModalType("permissions");
       setIsModalOpen(true);
+    } else if (action === "userRole") {
+      navigate(`/user-role/${role.id}`);
     }
   };
 
@@ -206,6 +208,7 @@ const UsersRoles: React.FC = () => {
           { name: "edit", label: "Update", variant: "primary" as const },
           { name: "delete", label: "Delete", variant: "danger" as const },
           { name: "permissions", label: "Permissions", variant: "success" as const },
+          { name: "userRole", label: "User Role", variant: "primary" as const },
         ]}
         onAction={handleAction}
       />

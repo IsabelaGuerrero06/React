@@ -242,7 +242,6 @@ const ListUsers: React.FC = () => {
           { name: "view", label: "View", variant: "info" },
           { name: "edit", label: "Edit", variant: "primary" },
           { name: "delete", label: "Delete", variant: "danger" },
-          { name: "role", label: "Role", variant: "success" },
           { name: "profile", label: "Profile", variant: "info" },
           { name: "address", label: "Address", variant: "secondary" },
           { name: "digitalSignature", label: "Digital Signature", variant: "success" },

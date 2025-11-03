@@ -35,6 +35,7 @@ const Buttons = lazy(() => import('../pages/UiElements/Buttons'));
 const Demo = lazy(() => import('../pages/Demo'));
 const MicrosoftCallback = lazy(() => import('../pages/Authentication/MicrosoftCallback'));
 const OAuthPopupReceiver = lazy(() => import('../pages/Authentication/OAuthPopupReceiver'));
+const RoleUsers = lazy(() => import('../pages/Users/RoleUsers'));
 
 const authRoutes = [
   {
@@ -107,6 +108,11 @@ const coreRoutes = [
     path: '/users/roles',
     title: 'Users Roles',
     component: UsersRoles,
+  },
+  {
+    path: '/user-role/:id',
+    title: 'Users by Role',
+    component: RoleUsers,
   },
   {
     path: '/users/list',
