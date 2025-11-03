@@ -33,9 +33,6 @@ const SessionCard: React.FC<SessionCardProps> = ({ session, onClose }) => {
                 <div className="flex-1 space-y-2">
                     {/* Header con ID y estado */}
                     <div className="flex items-center gap-3">
-                        <h3 className="text-sm font-mono text-gray-600">
-                            ID: {session.id}
-                        </h3>
                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${stateClassName}`}>
                             {session.state.toUpperCase()}
                         </span>
@@ -44,16 +41,6 @@ const SessionCard: React.FC<SessionCardProps> = ({ session, onClose }) => {
                                 ⚠️ INVÁLIDA
                             </span>
                         )}
-                    </div>
-
-                    {/* Token */}
-                    <div className="flex items-start gap-2">
-                        <span className="text-sm font-semibold text-gray-700 min-w-[80px]">
-                            Token:
-                        </span>
-                        <span className="text-sm font-mono text-gray-600 break-all">
-                            {session.token}
-                        </span>
                     </div>
 
                     {/* Fechas */}

@@ -4,14 +4,19 @@ import UsersRoles from '../pages/Users/Roles';
 import CreateUser from '../pages/Users/CreateUser';
 import UpdateUser from '../pages/Users/UpdateUser';
 import Permissions from '../pages/Permissions/Permissions';
+import ListSecurityQuestions from '../pages/SecurityQuestions/ListSecurityQuestion';
 import CreateSecurityQuestions from '../pages/SecurityQuestions/CreateSecurityQuestion';
 import UpdateSecurityQuestions from '../pages/SecurityQuestions/UpdateSecurityQuestion';
-import ListSecurityQuestions from '../pages/SecurityQuestions/ListSecurityQuestion';
 import ViewSecurityQuestion from '../pages/SecurityQuestions/ViewSecurityQuestion';
 import ListAnswer from '../pages/Answers/ListAnswer';
+import ListAnswersByUser from '../pages/Answers/ListAnswerByUser';
+import ListAnswersByQuestion from '../pages/Answers/ListAnswerByQuestion';
 import CreateAnswer from '../pages/Answers/CreateAnswer';
 import UpdateAnswer from '../pages/Answers/UpdateAnswer';
 import UserSessionsWrapper from '../pages/UserSessionWrapper';
+import ViewAnswer from '../pages/Answers/ViewAnswer';
+import CreatePermission from '../pages/Permissions/CreatePermission';
+import UpdatePermission from '../pages/Permissions/UpdatePermission';
 
 // Componentes de perfil
 const Profile = lazy(() => import('../pages/Profiles/Profile'));
@@ -88,6 +93,21 @@ const coreRoutes = [
     title: 'List Answers',
     component: ListAnswer,
   },
+  {
+    path: '/answers/user/:userId',
+    title: 'List Answers By User',
+    component: ListAnswersByUser,
+  },
+  {
+    path: '/answers/question/:questionId',
+    title: 'List Answers By Question',
+    component: ListAnswersByQuestion,
+  },
+  {
+    path: '/answers/:id',
+    title: 'List An Specific Answer',
+    component: ViewAnswer,
+  },
   // Users
   {
     path: '/users/roles',
@@ -109,10 +129,21 @@ const coreRoutes = [
     title: 'Update Users',
     component: UpdateUser,
   },
+  // Permissions
   {
     path: '/users/permissions',
     title: 'Permissions',
     component: Permissions,
+  },
+  {
+    path: '/permissions/create',
+    title: 'Create Permission',
+    component: CreatePermission,
+  },
+  {
+    path: '/permissions/update/:id',
+    title: 'Update Permission',
+    component: UpdatePermission,
   },
   // Sessions
   {

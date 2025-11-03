@@ -2,57 +2,71 @@ import axios from 'axios';
 import { Permission, CreatePermissionDTO, UpdatePermissionDTO } from '../models/Permission';
 import securityService from './securityService';
 
-const API_URL = import.meta.env.VITE_API_URL;
+/**
+ * Servicio para gestión de permisos
+ * SOLID Principles:
+ * - Single Responsibility: Solo maneja operaciones de permisos
+ * - Dependency Inversion: Depende de abstracciones (DTOs)
+ */
+class PermissionService {
+    private readonly baseURL: string;
 
-export const permissionService = {
-    getAll: async (): Promise<Permission[]> => {
+    constructor() {
+        this.baseURL = `${import.meta.env.VITE_API_URL}/api`;
+    }
+
+    private getHeaders() {
         const token = securityService.getToken();
-        const response = await axios.get(`${API_URL}/permissions`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+        return {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        };
+    }
+
+    async getAll(): Promise<Permission[]> {
+        const response = await axios.get(`${this.baseURL}/permissions`, {
+            headers: this.getHeaders()
         });
         return response.data;
-    },
+    }
 
-    getById: async (id: number): Promise<Permission> => {
-        const token = securityService.getToken();
-        const response = await axios.get(`${API_URL}/permissions/${id}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+    async getById(id: number): Promise<Permission> {
+        const response = await axios.get(`${this.baseURL}/permissions/${id}`, {
+            headers: this.getHeaders()
         });
         return response.data;
-    },
+    }
 
-    create: async (permission: CreatePermissionDTO): Promise<Permission> => {
-        const token = securityService.getToken();
-        const response = await axios.post(`${API_URL}/permissions`, permission, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
+    async create(permission: CreatePermissionDTO): Promise<Permission> {
+        const response = await axios.post(`${this.baseURL}/permissions`, permission, {
+            headers: this.getHeaders()
         });
         return response.data;
-    },
+    }
 
-    update: async (permission: UpdatePermissionDTO): Promise<Permission> => {
-        const token = securityService.getToken();
-        const response = await axios.put(`${API_URL}/permissions/${permission.id}`, permission, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
+    async update(permission: UpdatePermissionDTO): Promise<Permission> {
+        const response = await axios.put(`${this.baseURL}/permissions/${permission.id}`, permission, {
+            headers: this.getHeaders()
         });
         return response.data;
-    },
+    }
 
-    delete: async (id: number): Promise<void> => {
-        const token = securityService.getToken();
-        await axios.delete(`${API_URL}/permissions/${id}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+    async delete(id: number): Promise<void> {
+        await axios.delete(`${this.baseURL}/permissions/${id}`, {
+            headers: this.getHeaders()
         });
     }
-};
+
+    /**
+     * Obtiene permisos agrupados por entidad para un rol específico
+     * Backend endpoint: GET /permissions/grouped/role/{role_id}
+     */
+    async getGroupedByRole(roleId: number): Promise<any[]> {
+        const response = await axios.get(`${this.baseURL}/permissions/grouped/role/${roleId}`, {
+            headers: this.getHeaders()
+        });
+        return response.data;
+    }
+}
+
+export const permissionService = new PermissionService();

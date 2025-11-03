@@ -64,7 +64,7 @@ const ListUsers: React.FC = () => {
     } else if (action === "securityQuestions") {
       navigate(`/security-questions/list`);
     } else if (action === "answers") {
-      navigate(`/answers/list`);
+      navigate(`/answers/user/${item.id}`);
     } else if (action === "passwords") {
       navigate(`/passwords/${item.id}`);
     } else if (action === "sessions") {
@@ -115,7 +115,7 @@ const ListUsers: React.FC = () => {
         columns={["id", "name", "email"]}
         actions={[
           { name: "view", label: "View", variant: "info" },
-          { name: "edit", label: "Update", variant: "primary" },
+          { name: "edit", label: "Edit", variant: "primary" },
           { name: "delete", label: "Delete", variant: "danger" },
           { name: "profile", label: "Profile", variant: "info" },
           { name: "address", label: "Address", variant: "secondary" },

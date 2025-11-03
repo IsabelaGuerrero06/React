@@ -37,7 +37,8 @@ const CreatePermission: React.FC = () => {
                     timer: 3000
                 });
                 console.log("Permiso creado con éxito:", createdPermission);
-                navigate("/permissions");
+                // Cambiar esta línea para redirigir a la URL específica
+                navigate("/users/permissions");
             } else {
                 Swal.fire({
                     title: "Error",
