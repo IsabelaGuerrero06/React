@@ -1,23 +1,23 @@
-// src/pages/answers/ListAnswer.tsx
+// src/pages/securityQuestions/ListSecurityQuestion.tsx
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import { answerService } from "../../services/answerService";
-import { Answer } from "../../models/Answer";
-import { useEffect, useState } from "react";
+import { securityQuestionService } from "../../services/securityQuestionService";
+import { SecurityQuestion } from "../../models/SecurityQuestion";
 import GenericTable from "../../components/GenericTable";
 import GenericButton from "../../components/GenericButton";
 
-const ListAnswer: React.FC = () => {
-  const [answers, setAnswers] = useState<Answer[]>([]);
+const ListSecurityQuestion: React.FC = () => {
+  const [questions, setQuestions] = useState<SecurityQuestion[]>([]);
   const navigate = useNavigate();
 
-  // 🔹 Cargar todas las respuestas
+  // 🔹 Cargar todas las preguntas
   const fetchData = async () => {
     try {
-      const data = await answerService.getAnswers();
-      setAnswers(data);
+      const data = await securityQuestionService.getAll();
+      setQuestions(data);
     } catch (error) {
-      console.error("Error fetching answers:", error);
+      console.error("Error fetching security questions:", error);
     }
   };
 
@@ -25,26 +25,28 @@ const ListAnswer: React.FC = () => {
     fetchData();
   }, []);
 
-  // 🔹 Acciones de la tabla
-  const handleAction = async (action: string, item: Answer) => {
+  // 🔹 Manejar acciones
+  const handleAction = async (action: string, item: SecurityQuestion) => {
     if (action === "view") {
-      navigate(`/answers/${item.id}`);
+      navigate(`/security-questions/${item.id}`);
     } else if (action === "edit") {
-      navigate(`/answers/update/${item.id}`);
+      navigate(`/security-questions/update/${item.id}`);
+    } else if (action === "answers") {
+      navigate(`/answers/question/${item.id}`);
     } else if (action === "delete") {
       Swal.fire({
         title: "Delete",
-        text: "Are you sure you want to delete this answer?",
+        text: "Are you sure you want to delete this security question?",
         icon: "warning",
         showCancelButton: true,
         confirmButtonText: "Yes, delete it",
       }).then(async (result) => {
         if (result.isConfirmed) {
           try {
-            await answerService.deleteAnswer(item.id!);
+            await securityQuestionService.delete(item.id!);
             Swal.fire({
               title: "Deleted",
-              text: "Answer deleted successfully.",
+              text: "Security question deleted successfully.",
               icon: "success",
               timer: 2000,
             });
@@ -52,7 +54,7 @@ const ListAnswer: React.FC = () => {
           } catch (err) {
             Swal.fire({
               title: "Error",
-              text: "There was a problem deleting the answer.",
+              text: "There was a problem deleting the question.",
               icon: "error",
             });
           }
@@ -66,25 +68,18 @@ const ListAnswer: React.FC = () => {
       {/* Header con título y botones */}
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
-          All Answers
+          Security Questions
         </h2>
 
         <div className="flex gap-2">
-          {/* Crear nueva respuesta */}
+          {/* Botón: Crear nueva pregunta */}
           <GenericButton
-            label="+ Add Answer"
-            onClick={() => navigate("/answers/create")}
+            label="+ Add Question"
+            onClick={() => navigate("/security-questions/create")}
             variant="success"
           />
 
-          <GenericButton
-            label="Find Answer by User & Question"
-            onClick={() => navigate("/answers/find")}
-            variant="info"
-            size="md"
-          />
-
-          {/* Volver a Users */}
+          {/* 🔹 Botón: volver a lista de usuarios */}
           <GenericButton
             label="Back to Users"
             onClick={() => navigate("/users/list")}
@@ -95,10 +90,11 @@ const ListAnswer: React.FC = () => {
 
       {/* Tabla genérica */}
       <GenericTable
-        data={answers}
-        columns={["id", "user_id", "security_question_id", "content"]}
+        data={questions}
+        columns={["id", "name", "description"]}
         actions={[
           { name: "view", label: "View", variant: "info" },
+          { name: "answers", label: "Answers", variant: "secondary" },
           { name: "edit", label: "Edit", variant: "primary" },
           { name: "delete", label: "Delete", variant: "danger" },
         ]}
@@ -108,4 +104,4 @@ const ListAnswer: React.FC = () => {
   );
 };
 
-export default ListAnswer;
+export default ListSecurityQuestion;

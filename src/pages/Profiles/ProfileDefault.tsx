@@ -5,43 +5,32 @@ import { checkProfileExists } from '../../services/ProfileService';
 
 /**
  * Componente para /profile sin ID
- * Si tienes autenticación, detecta el usuario actual y redirige a su perfil
- * Si no, muestra mensaje para ir a lista de usuarios
+ * Detecta el usuario logueado desde localStorage
+ * y redirige automáticamente a su perfil.
  */
 const ProfileDefault = () => {
   const navigate = useNavigate();
   const [isChecking, setIsChecking] = useState(true);
 
-  // OPCIÓN A: Si tienes contexto de autenticación
-  // import { useAuth } from '../../context/AuthContext';
-  // const { user } = useAuth();
-  // const currentUserId = user?.id;
-
-  // OPCIÓN B: Si guardas el userId en localStorage
-  // const currentUserId = localStorage.getItem('currentUserId');
-
-  // OPCIÓN C: Temporalmente, usar un ID fijo para pruebas
-  const currentUserId = 1; // 👈 Cambiar esto según tu lógica
+  // ✅ Obtener el ID real del usuario logueado
+  const currentUserId = localStorage.getItem('currentUserId');
 
   useEffect(() => {
     if (currentUserId) {
       checkAndRedirect();
     } else {
+      console.warn("⚠️ No se encontró currentUserId en localStorage");
       setIsChecking(false);
     }
   }, [currentUserId]);
 
   const checkAndRedirect = async () => {
-    if (!currentUserId) return;
-
     try {
       const exists = await checkProfileExists(Number(currentUserId));
-      
+
       if (exists) {
-        // Si el perfil existe, redirigir a verlo
         navigate(`/profile/${currentUserId}`, { replace: true });
       } else {
-        // Si no existe, redirigir a crearlo
         navigate(`/profiles/create/${currentUserId}`, { replace: true });
       }
     } catch (error) {
@@ -61,7 +50,7 @@ const ProfileDefault = () => {
     );
   }
 
-  // Si no hay usuario logueado o no se puede detectar
+  // Si no hay usuario logueado o no se detectó ID
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
       <div className="bg-white rounded-lg shadow-lg p-10 max-w-md text-center">
@@ -72,20 +61,15 @@ const ProfileDefault = () => {
           Perfil no encontrado
         </h2>
         <p className="text-gray-600 mb-8">
-          Este usuario aún no ha creado su perfil. Crea uno ahora para comenzar.
+          No se detectó un usuario logueado. Inicia sesión para continuar.
         </p>
-        
-        <div className="space-y-4">
-          <button
-            onClick={() => navigate('/users/list')}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-all shadow-md hover:shadow-lg"
-          >
-            Ir a lista de usuarios
-          </button>
-          <p className="text-sm text-gray-500">
-            Selecciona un usuario para ver o crear su perfil
-          </p>
-        </div>
+
+        <button
+          onClick={() => navigate('/auth/signin')}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-all shadow-md hover:shadow-lg"
+        >
+          Ir al inicio de sesión
+        </button>
       </div>
     </div>
   );

@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { Answer } from '../models/Answer';
+import { userService } from '../services/userService';
+import { securityQuestionService } from '../services/securityQuestionService';
+import { User } from '../models/User';
+import { SecurityQuestion } from '../models/SecurityQuestion';
 
-// Props para el formulario
 interface AnswerFormProps {
   mode: number; // 1 = crear, 2 = actualizar
   handleCreate?: (values: Answer) => void;
@@ -11,8 +14,30 @@ interface AnswerFormProps {
   answer?: Answer | null;
 }
 
-const AnswerFormValidator: React.FC<AnswerFormProps> = ({mode, handleCreate, handleUpdate, answer }) => {
-  // Función que decide si crear o actualizar
+const AnswerFormValidator: React.FC<AnswerFormProps> = ({
+  mode,
+  handleCreate,
+  handleUpdate,
+  answer,
+}) => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [questions, setQuestions] = useState<SecurityQuestion[]>([]);
+
+  // 🔹 Cargar listas de usuarios y preguntas
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const usersData = await userService.getUsers();
+        const questionsData = await securityQuestionService.getAll();
+        setUsers(usersData);
+        setQuestions(questionsData);
+      } catch (error) {
+        console.error('Error cargando datos para selects:', error);
+      }
+    };
+    fetchData();
+  }, []);
+
   const handleSubmit = (formattedValues: Answer) => {
     if (mode === 1 && handleCreate) {
       handleCreate(formattedValues);
@@ -25,7 +50,10 @@ const AnswerFormValidator: React.FC<AnswerFormProps> = ({mode, handleCreate, han
 
   return (
     <Formik
-      initialValues={answer ? answer : {
+      initialValues={
+        answer
+          ? answer
+          : {
               content: '',
               user_id: 0,
               security_question_id: 0,
@@ -36,16 +64,20 @@ const AnswerFormValidator: React.FC<AnswerFormProps> = ({mode, handleCreate, han
           .max(255, 'El contenido no puede superar los 255 caracteres')
           .required('El contenido es obligatorio'),
         user_id: Yup.number()
-          .typeError('Debe ser un número')
-          .positive('Debe ser un número positivo')
-          .required('El ID de usuario es obligatorio'),
+          .typeError('Debe seleccionar un usuario')
+          .positive('Debe seleccionar un usuario válido')
+          .required('El usuario es obligatorio'),
         security_question_id: Yup.number()
-          .typeError('Debe ser un número')
-          .positive('Debe ser un número positivo')
-          .required('El ID de la pregunta de seguridad es obligatorio'),
+          .typeError('Debe seleccionar una pregunta de seguridad')
+          .positive('Debe seleccionar una pregunta válida')
+          .required('La pregunta de seguridad es obligatoria'),
       })}
       onSubmit={(values) => {
-        const formattedValues = { ...values, user_id: Number(values.user_id), security_question_id: Number(values.security_question_id) }; // Formateo adicional si es necesario
+        const formattedValues = {
+          ...values,
+          user_id: Number(values.user_id),
+          security_question_id: Number(values.security_question_id),
+        };
         handleSubmit(formattedValues);
       }}
     >
@@ -74,19 +106,26 @@ const AnswerFormValidator: React.FC<AnswerFormProps> = ({mode, handleCreate, han
             />
           </div>
 
-          {/* ID del Usuario */}
+          {/* Usuario (select) */}
           <div>
             <label
               htmlFor="user_id"
               className="block text-lg font-medium text-gray-700"
             >
-              ID de Usuario
+              Usuario
             </label>
             <Field
-              type="number"
+              as="select"
               name="user_id"
               className="w-full border rounded-md p-2"
-            />
+            >
+              <option value="">-- Selecciona un usuario --</option>
+              {users.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.name} ({user.email})
+                </option>
+              ))}
+            </Field>
             <ErrorMessage
               name="user_id"
               component="p"
@@ -94,19 +133,26 @@ const AnswerFormValidator: React.FC<AnswerFormProps> = ({mode, handleCreate, han
             />
           </div>
 
-          {/* ID de la Pregunta de Seguridad */}
+          {/* Pregunta de seguridad (select) */}
           <div>
             <label
               htmlFor="security_question_id"
               className="block text-lg font-medium text-gray-700"
             >
-              ID de Pregunta de Seguridad
+              Pregunta de Seguridad
             </label>
             <Field
-              type="number"
+              as="select"
               name="security_question_id"
               className="w-full border rounded-md p-2"
-            />
+            >
+              <option value="">-- Selecciona una pregunta --</option>
+              {questions.map((q) => (
+                <option key={q.id} value={q.id}>
+                  {q.name}
+                </option>
+              ))}
+            </Field>
             <ErrorMessage
               name="security_question_id"
               component="p"

@@ -106,6 +106,11 @@ const ListUsers: React.FC = () => {
     } else if (action === "digitalSignature") {
       navigate(`/digital-signature/${userWithRole.id}`);
     } else if (action === "devices") {
+      navigate(`/devices/${item.id}`);
+    } else if (action === "securityQuestions") {
+      navigate(`/security-questions/list`);
+    } else if (action === "answers") {
+      navigate(`/answers/user/${item.id}`);
       navigate(`/devices/${userWithRole.id}`);
     } else if (action === "passwords") {
       navigate(`/passwords/${userWithRole.id}`);
@@ -235,17 +240,15 @@ const ListUsers: React.FC = () => {
         columns={["id", "name", "email"]}
         actions={[
           { name: "view", label: "View", variant: "info" },
-          { name: "edit", label: "Update", variant: "primary" },
+          { name: "edit", label: "Edit", variant: "primary" },
           { name: "delete", label: "Delete", variant: "danger" },
           { name: "role", label: "Role", variant: "success" },
           { name: "profile", label: "Profile", variant: "info" },
           { name: "address", label: "Address", variant: "secondary" },
-          {
-            name: "digitalSignature",
-            label: "Digital Signature",
-            variant: "success",
-          },
-          { name: "devices", label: "Devices", variant: "success" },
+          { name: "digitalSignature", label: "Digital Signature", variant: "success" },
+          { name: "devices", label: "Devices", variant: "primary" },
+          { name: "securityQuestions", label: "Security Questions", variant: "info" },
+          { name: "answers", label: "Security Answers", variant: "secondary" },
           { name: "passwords", label: "Passwords", variant: "primary" },
           { name: "sessions", label: "Sessions", variant: "secondary" },
         ]}
