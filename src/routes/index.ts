@@ -4,6 +4,10 @@ import UsersRoles from '../pages/Users/Roles';
 import CreateUser from '../pages/Users/CreateUser';
 import UpdateUser from '../pages/Users/UpdateUser';
 import Permissions from '../pages/Permissions/Permissions'; 
+import CreateSecurityQuestions from '../pages/SecurityQuestions/CreateSecurityQuestion';
+import UpdateSecurityQuestions from '../pages/SecurityQuestions/UpdateSecurityQuestion';
+import ListSecurityQuestions from '../pages/SecurityQuestions/ListSecurityQuestion';
+import ViewSecurityQuestion from '../pages/SecurityQuestions/ViewSecurityQuestion';
 import ListAnswer from '../pages/Answers/ListAnswer';
 import CreateAnswer from '../pages/Answers/CreateAnswer';
 import UpdateAnswer from '../pages/Answers/UpdateAnswer';
@@ -43,6 +47,27 @@ const authRoutes = [
 ];
 
 const coreRoutes = [
+  // Security Questions
+  {
+    path: '/security-questions/create',
+    title: 'Create Security Questions',
+    component: CreateSecurityQuestions,
+  },
+  {
+    path: '/security-questions/update/:id',
+    title: 'Update Security Questions',
+    component: UpdateSecurityQuestions,
+  },
+  {
+    path: '/security-questions/list',
+    title: 'List Security Questions',
+    component: ListSecurityQuestions,
+  },
+  {
+    path: '/security-questions/:id',
+    title: 'List An Specific Security Question',
+    component: ViewSecurityQuestion,
+  },
   // Answers
   {
     path: '/answers/create',

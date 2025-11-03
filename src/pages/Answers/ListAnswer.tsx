@@ -4,6 +4,7 @@ import { answerService } from "../../services/answerService";
 import { Answer } from "../../models/Answer";
 import { useEffect, useState } from "react";
 import GenericTable from "../../components/GenericTable";
+import GenericButton from "../../components/GenericButton";
 
 const ListAnswer: React.FC = () => {
   const [answers, setAnswers] = useState<Answer[]>([]);
@@ -24,7 +25,7 @@ const ListAnswer: React.FC = () => {
   }, []);
 
   // Columnas y acciones
-  const columns = ["id", "user_id", "security_question_id", "content", "created_at"];
+  const columns = ["id", "user_id", "security_question_id", "content"];
   const actions = [
     { name: "edit", label: "Editar" },
     { name: "delete", label: "Eliminar" },
@@ -71,8 +72,18 @@ const ListAnswer: React.FC = () => {
   };
 
   return (
+    
     <div style={{ padding: "20px" }}>
-      <h2>Respuestas de seguridad</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2>Answers</h2>
+        
+        <GenericButton
+          label="+ Add Answer"
+          onClick={() => navigate("/answers/create")}
+          variant="success"
+          size="md"
+        />
+      </div>
       <GenericTable
         data={answers}
         columns={columns}

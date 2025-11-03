@@ -61,6 +61,10 @@ const ListUsers: React.FC = () => {
       navigate(`/digital-signature/${item.id}`);
     } else if (action === "devices") {
       navigate(`/devices/${item.id}`);
+    } else if (action === "securityQuestions") {
+      navigate(`/security-questions/list`);
+    } else if (action === "answers") {
+      navigate(`/answers/list`);
     } else if (action === "passwords") {
       navigate(`/passwords/${item.id}`);
     } else if (action === "sessions") {
@@ -115,12 +119,10 @@ const ListUsers: React.FC = () => {
           { name: "delete", label: "Delete", variant: "danger" },
           { name: "profile", label: "Profile", variant: "info" },
           { name: "address", label: "Address", variant: "secondary" },
-          {
-            name: "digitalSignature",
-            label: "Digital Signature",
-            variant: "success",
-          },
-          { name: "devices", label: "Devices", variant: "success" },
+          { name: "digitalSignature", label: "Digital Signature", variant: "success" },
+          { name: "devices", label: "Devices", variant: "primary" },
+          { name: "securityQuestions", label: "Security Questions", variant: "info" },
+          { name: "answers", label: "Security Answers", variant: "secondary" },
           { name: "passwords", label: "Passwords", variant: "primary" },
           { name: "sessions", label: "Sessions", variant: "secondary" },
         ]}
