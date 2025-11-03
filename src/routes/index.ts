@@ -16,6 +16,11 @@ import CreateAnswer from '../pages/Answers/CreateAnswer';
 import UpdateAnswer from '../pages/Answers/UpdateAnswer';
 import UserSessionsWrapper from '../pages/UserSessionWrapper';
 import ViewAnswer from '../pages/Answers/ViewAnswer';
+import ListDevice from '../pages/Devices/ListDevice';
+import ListDevicesByUser from '../pages/Devices/ListDeviceByUser';
+import UpdateDevice from '../pages/Devices/UpdateDevice';
+import CreateDevice from '../pages/Devices/CreateDevice';
+import ViewDevice from '../pages/Devices/ViewDevice';
 import CreatePermission from '../pages/Permissions/CreatePermission';
 import UpdatePermission from '../pages/Permissions/UpdatePermission';
 
@@ -58,6 +63,32 @@ const authRoutes = [
 ];
 
 const coreRoutes = [
+  // Devices
+  {
+    path: '/devices/create',
+    title: 'Create Device',
+    component: CreateDevice,
+  },
+  {
+    path: '/devices/update/:id',
+    title: 'Update Device',
+    component: UpdateDevice,
+  },
+  {
+    path: '/devices/list',
+    title: 'List Devices',
+    component: ListDevice,
+  },
+  {
+    path: '/devices/user/:userId',
+    title: 'List Devices By User',
+    component: ListDevicesByUser,
+  },
+  {
+    path: '/devices/:id',
+    title: 'List An Specific Device',
+    component: ViewDevice,
+  },
   // Security Questions
   {
     path: '/security-questions/create',
