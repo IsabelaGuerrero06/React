@@ -48,7 +48,7 @@ const UpdatePermission: React.FC = () => {
                     icon: "success",
                     timer: 3000
                 });
-                navigate("/permissions");
+                navigate("/users/permissions");
             } else {
                 Swal.fire({
                     title: "Error",

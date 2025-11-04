@@ -1,12 +1,15 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { getProfileByUserId, updateProfile } from '../../services/ProfileService';
+import {
+  getProfileByUserId,
+  updateProfile,
+} from '../../services/ProfileService';
 import { Upload, User, Mail, Phone, Camera } from 'lucide-react';
 
 const UpdateProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  
+
   const [profile, setProfile] = useState<any>(null);
   const [formData, setFormData] = useState({
     phone: '',
@@ -79,10 +82,9 @@ const UpdateProfile = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!profile?.id) return;
 
-    // Validar que al menos haya un cambio
     if (!selectedFile && formData.phone === profile.phone) {
       alert('⚠️ No hay cambios para guardar.');
       return;
@@ -93,18 +95,32 @@ const UpdateProfile = () => {
     try {
       const formDataToSend = new FormData();
       formDataToSend.append('phone', formData.phone);
-      
-      // IMPORTANTE: El backend espera 'photo' no 'avatar'
+
       if (selectedFile) {
         formDataToSend.append('photo', selectedFile);
       }
 
       const updatedProfile = await updateProfile(profile.id, formDataToSend);
+
+      // ✅ Actualizar el localStorage y estado global si la foto cambió
+      if (selectedFile && updatedProfile.avatarUrl) {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          user.avatarUrl = updatedProfile.avatarUrl;
+          localStorage.setItem('user', JSON.stringify(user));
+
+          // Disparar evento personalizado para notificar al header
+          window.dispatchEvent(new Event('userAvatarUpdated'));
+        }
+      }
+
       alert('✅ Perfil actualizado correctamente');
       navigate(`/profile/${id}`);
     } catch (error: any) {
       console.error('❌ Error al actualizar perfil:', error);
-      const errorMessage = error.response?.data?.error || 'Error al actualizar el perfil';
+      const errorMessage =
+        error.response?.data?.error || 'Error al actualizar el perfil';
       alert(`❌ ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
@@ -114,7 +130,9 @@ const UpdateProfile = () => {
   if (!id) {
     return (
       <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
-        <p className="text-red-600">No se puede actualizar el perfil sin un ID.</p>
+        <p className="text-red-600">
+          No se puede actualizar el perfil sin un ID.
+        </p>
       </div>
     );
   }
@@ -143,13 +161,12 @@ const UpdateProfile = () => {
 
           <form onSubmit={handleSubmit}>
             <div className="space-y-8">
-              
               {/* Sección de foto de perfil */}
               <div className="flex flex-col items-center pb-8 border-b border-gray-200">
                 <label className="block text-sm font-medium text-gray-700 mb-4 text-center">
                   Foto de perfil
                 </label>
-                
+
                 <div className="relative">
                   <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-gray-200 bg-gray-100 shadow-lg">
                     {previewUrl ? (
@@ -164,7 +181,7 @@ const UpdateProfile = () => {
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Botón de cámara flotante */}
                   <label className="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full cursor-pointer shadow-lg transition-all hover:scale-110">
                     <Camera size={20} />
@@ -179,7 +196,9 @@ const UpdateProfile = () => {
 
                 {selectedFile && (
                   <div className="mt-4 flex items-center gap-2">
-                    <span className="text-sm text-green-600">✓ {selectedFile.name}</span>
+                    <span className="text-sm text-green-600">
+                      ✓ {selectedFile.name}
+                    </span>
                     <button
                       type="button"
                       onClick={handleRemovePhoto}
@@ -189,7 +208,7 @@ const UpdateProfile = () => {
                     </button>
                   </div>
                 )}
-                
+
                 <p className="mt-3 text-sm text-gray-500 text-center">
                   JPG, PNG o GIF (máx. 5MB)
                 </p>
@@ -197,7 +216,6 @@ const UpdateProfile = () => {
 
               {/* Campos de información */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
                 {/* Name - Solo lectura */}
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
@@ -256,8 +274,9 @@ const UpdateProfile = () => {
               {/* Nota informativa */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-800">
-                  <strong>ℹ️ Nota:</strong> Solo puedes actualizar tu teléfono y foto de perfil desde esta sección. 
-                  Para cambiar tu nombre o correo electrónico, contacta al administrador.
+                  <strong>ℹ️ Nota:</strong> Solo puedes actualizar tu teléfono y
+                  foto de perfil desde esta sección. Para cambiar tu nombre o
+                  correo electrónico, contacta al administrador.
                 </p>
               </div>
 
@@ -266,7 +285,7 @@ const UpdateProfile = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg"
+                  className="flex-1 py-3 bg-primary hover:bg-secondary text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2">
@@ -278,13 +297,13 @@ const UpdateProfile = () => {
                   )}
                 </button>
                 <button
-                  type="button"
-                  onClick={() => navigate(`/profile/${id}`)}
-                  disabled={isSubmitting}
-                  className="px-8 py-3 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-700 rounded-lg font-medium transition"
-                >
-                  Cancelar
-                </button>
+  type="button"
+  onClick={() => navigate(`/profile/${id}`)}
+  disabled={isSubmitting}
+  className="px-8 py-3 bg-gradient-to-r from-danger to-meta-7 hover:from-meta-7 hover:to-danger text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+>
+  Cancelar
+</button>
               </div>
             </div>
           </form>
