@@ -1,8 +1,10 @@
 import { lazy } from 'react';
 import ListUsers from '../pages/Users/ListUser';
+import PasswordCreate from '../pages/Users/PasswordCreate';
 import UsersRoles from '../pages/Users/Roles';
 import CreateUser from '../pages/Users/CreateUser';
 import UpdateUser from '../pages/Users/UpdateUser';
+import UserAddress from '../pages/Users/UserAddress';
 import Permissions from '../pages/Permissions/Permissions';
 import ListSecurityQuestions from '../pages/SecurityQuestions/ListSecurityQuestion';
 import CreateSecurityQuestions from '../pages/SecurityQuestions/CreateSecurityQuestion';
@@ -15,6 +17,11 @@ import CreateAnswer from '../pages/Answers/CreateAnswer';
 import UpdateAnswer from '../pages/Answers/UpdateAnswer';
 import UserSessionsWrapper from '../pages/UserSessionWrapper';
 import ViewAnswer from '../pages/Answers/ViewAnswer';
+import ListDevice from '../pages/Devices/ListDevice';
+import ListDevicesByUser from '../pages/Devices/ListDeviceByUser';
+import UpdateDevice from '../pages/Devices/UpdateDevice';
+import CreateDevice from '../pages/Devices/CreateDevice';
+import ViewDevice from '../pages/Devices/ViewDevice';
 import CreatePermission from '../pages/Permissions/CreatePermission';
 import UpdatePermission from '../pages/Permissions/UpdatePermission';
 
@@ -57,6 +64,32 @@ const authRoutes = [
 ];
 
 const coreRoutes = [
+  // Devices
+  {
+    path: '/devices/create',
+    title: 'Create Device',
+    component: CreateDevice,
+  },
+  {
+    path: '/devices/update/:id',
+    title: 'Update Device',
+    component: UpdateDevice,
+  },
+  {
+    path: '/devices/list',
+    title: 'List Devices',
+    component: ListDevice,
+  },
+  {
+    path: '/devices/user/:userId',
+    title: 'List Devices By User',
+    component: ListDevicesByUser,
+  },
+  {
+    path: '/devices/:id',
+    title: 'List An Specific Device',
+    component: ViewDevice,
+  },
   // Security Questions
   {
     path: '/security-questions/create',
@@ -135,6 +168,11 @@ const coreRoutes = [
     title: 'Update Users',
     component: UpdateUser,
   },
+  {
+    path: '/address/:userId',
+    title: 'User Address',
+    component: UserAddress,
+  },
   // Permissions
   {
     path: '/users/permissions',
@@ -156,6 +194,11 @@ const coreRoutes = [
     path: '/sessions/:id',
     title: 'User Sessions',
     component: UserSessionsWrapper,
+  },
+  {
+    path: '/passwords/:userId',
+    title: 'User Passwords',
+    component: PasswordCreate,
   },
   // Profiles
   {

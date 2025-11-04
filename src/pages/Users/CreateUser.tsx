@@ -1,17 +1,15 @@
-import UserFormValidator from '../../components/UserFormValidator';
-import { createProfile } from "../../services/ProfileService";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import GenericForm, { FormField } from "../../components/GenericForm";
 import { userService } from "../../services/userService";
+import { createProfile } from "../../services/ProfileService";
+import { deviceService } from "../../services/deviceService";
 import { User } from "../../models/User";
-import Breadcrumb from "../../components/Breadcrumb";
 
 const CreateUser: React.FC = () => {
   const navigate = useNavigate();
 
-  // Campos para GenericForm
   const formFields: FormField[] = [
     {
       name: "name",
@@ -29,65 +27,105 @@ const CreateUser: React.FC = () => {
     },
   ];
 
-  // Función unificada para crear usuario
   const handleCreateUser = async (data: Record<string, any> | User) => {
+    let userId: number | null = null;
+
     try {
-      // Crear el usuario primero
+      // PASO 1: Crear usuario
+      console.log("STEP 1: Creating user...");
       const createdUser = await userService.createUser(data as User);
+      
+      if (!createdUser?.id) {
+        throw new Error("User creation failed - no ID returned");
+      }
+      
+      userId = createdUser.id;
+      console.log(`✓ User created with ID: ${userId}`);
 
-      if (createdUser) {
-        // Preparar FormData para el perfil
+      // PASO 2: Crear perfil (opcional, no detiene el flujo)
+      console.log("STEP 2: Creating profile...");
+      try {
         const formData = new FormData();
-        formData.append(
-          "fullName",
-          createdUser.name || "Usuario sin nombre"
-        );
-        formData.append("email", createdUser.email || "");
-        const phone = "phone" in data ? (data as any).phone : "";
-        formData.append("phone", phone);
+        formData.append("phone", "");
+        formData.append("fullName", createdUser.name || "");
+        await createProfile(userId, formData);
+        console.log("✓ Profile created");
+      } catch (err) {
+        console.warn("Profile creation failed (continuing):", err);
+      }
 
-        // Crear perfil con los datos correctos del usuario
-        await createProfile(createdUser.id!, formData);
+      // PASO 3: Crear dispositivo
+      console.log("STEP 3: Creating device...");
+      
+      // Obtener IP
+      let ip = "127.0.0.1";
+      try {
+        const ipRes = await fetch("https://api.ipify.org?format=json");
+        const ipData = await ipRes.json();
+        ip = ipData.ip;
+      } catch {
+        console.warn("Could not get IP, using default");
+      }
 
-        Swal.fire({
-          title: "Completado",
-          text: "Se ha creado correctamente el usuario y su perfil.",
+      // Detectar OS
+      let os = "Unknown";
+      try {
+        const ua = navigator.userAgent;
+        if (ua.includes("Win")) os = "Windows";
+        else if (ua.includes("Mac")) os = "macOS";
+        else if (ua.includes("Linux")) os = "Linux";
+        else if (ua.includes("Android")) os = "Android";
+        else if (ua.includes("iPhone") || ua.includes("iPad")) os = "iOS";
+      } catch {
+        console.warn("Could not detect OS");
+      }
+
+      const deviceData = {
+        user_id: userId,
+        name: `Device of ${createdUser.name || "User"}`,
+        ip: ip,
+        operating_system: os,
+      };
+
+      console.log("Creating device with data:", deviceData);
+      const device = await deviceService.createDevice(deviceData);
+
+      if (device) {
+        console.log("✓ Device created successfully");
+        await Swal.fire({
+          title: "Success!",
+          text: "User, profile and device created",
           icon: "success",
-          timer: 3000,
+          timer: 2000,
         });
-
-        console.log("🆕 Usuario y perfil creados:", createdUser);
-        navigate("/users/list");
       } else {
-        Swal.fire({
-          title: "Error",
-          text: "Existe un problema al momento de crear el usuario.",
-          icon: "error",
-          timer: 3000,
+        console.warn("Device creation returned null");
+        await Swal.fire({
+          title: "Partial Success",
+          text: "User created but device failed",
+          icon: "warning",
+          timer: 2000,
         });
       }
+
+      navigate("/users/list");
+
     } catch (error) {
-      console.error("❌ Error en creación de usuario:", error);
-      Swal.fire({
+      console.error("ERROR in user creation:", error);
+      
+      await Swal.fire({
         title: "Error",
-        text: "Ha ocurrido un error inesperado",
+        text: error instanceof Error ? error.message : "Unknown error",
         icon: "error",
-        timer: 3000,
       });
     }
   };
 
   return (
     <div className="p-6">
-      <Breadcrumb pageName="Crear Usuario" />
       <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">
         Create User
       </h2>
-
-      <UserFormValidator
-        handleCreate={handleCreateUser}
-        mode={1} // 1 significa creación
-      />
 
       <GenericForm
         fields={formFields}

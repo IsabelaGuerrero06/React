@@ -105,14 +105,12 @@ const ListUsers: React.FC = () => {
       navigate(`/address/${userWithRole.id}`);
     } else if (action === "digitalSignature") {
       navigate(`/digital-signature/${userWithRole.id}`);
-    } else if (action === "devices") {
-      navigate(`/devices/${item.id}`);
     } else if (action === "securityQuestions") {
       navigate(`/security-questions/list`);
     } else if (action === "answers") {
-      navigate(`/answers/user/${item.id}`);
+      navigate(`/answers/user/${userWithRole.id}`);
     } else if (action === "devices") {
-      navigate(`/devices/${userWithRole.id}`);
+      navigate(`/devices/user/${userWithRole.id}`);
     } else if (action === "passwords") {
       navigate(`/passwords/${userWithRole.id}`);
     } else if (action === "sessions") {
