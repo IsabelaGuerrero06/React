@@ -12,10 +12,11 @@ export interface Permission {
 }
 
 /**
- * Permiso extendido para uso en gestión de roles (incluye has_permission)
+ * Permiso extendido para uso en gestión de roles (incluye has_permission y is_dummy)
  */
 export interface PermissionWithStatus extends Permission {
     has_permission?: boolean;
+    is_dummy?: boolean; // ✅ AGREGADO: Identifica permisos dummy (no existen en BD)
 }
 
 /**
@@ -24,7 +25,7 @@ export interface PermissionWithStatus extends Permission {
 export interface CreatePermissionDTO {
     url: string;
     method: string;
-    entity: string;  // 🔥 CAMBIO: Hacer entity obligatorio para coincidir con backend
+    entity: string;
 }
 
 /**
@@ -53,6 +54,6 @@ export enum HttpMethod {
  */
 export interface GroupedPermissions {
     entity: string;
-    permissions: PermissionWithStatus[]; // Cambiar a PermissionWithStatus
-    has_permission?: boolean; // Para asignación de roles
+    permissions: PermissionWithStatus[];
+    has_permission?: boolean;
 }

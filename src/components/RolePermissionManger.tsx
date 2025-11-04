@@ -3,6 +3,7 @@ import { Role } from '../models/Role';
 import { PermissionWithStatus, GroupedPermissions } from '../models/Permission';
 import { rolePermissionService } from '../services/rolePermissionService';
 import { permissionService } from '../services/permissionService';
+import { dummyPermissionService } from '../services/dummyPermissionService';
 import Swal from 'sweetalert2';
 
 interface RolePermissionManagerProps {
@@ -12,30 +13,23 @@ interface RolePermissionManagerProps {
 
 interface EntityPermissions {
   entity: string;
-  model: PermissionWithStatus | null;
   view: PermissionWithStatus | null;
   list: PermissionWithStatus | null;
+  create: PermissionWithStatus | null;
   update: PermissionWithStatus | null;
   delete: PermissionWithStatus | null;
-}
-
-// Interfaz para permisos dummy
-interface DummyPermission extends PermissionWithStatus {
-  is_dummy?: boolean;
 }
 
 const RolePermissionManager: React.FC<RolePermissionManagerProps> = ({
   role,
   onClose,
 }) => {
-  const [groupedPermissions, setGroupedPermissions] = useState<
-    GroupedPermissions[]
-  >([]);
   const [organizedPermissions, setOrganizedPermissions] = useState<
     EntityPermissions[]
   >([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  let dummyIdCounter = -1;
 
   useEffect(() => {
     loadPermissions();
@@ -44,14 +38,12 @@ const RolePermissionManager: React.FC<RolePermissionManagerProps> = ({
   const organizePermissions = (
     permissions: GroupedPermissions[],
   ): EntityPermissions[] => {
-    let dummyIdCounter = -1; // Contador para IDs únicos de permisos dummy
-    
     return permissions.map((group) => {
       const entityPerms: EntityPermissions = {
         entity: group.entity,
-        model: null,
         view: null,
         list: null,
+        create: null,
         update: null,
         delete: null,
       };
@@ -60,35 +52,33 @@ const RolePermissionManager: React.FC<RolePermissionManagerProps> = ({
         const url = permission.url.toLowerCase();
         const method = permission.method.toLowerCase();
 
-        // Asignar permisos basándose únicamente en URL y método
         if (
-          url.includes('/create') || 
-          url.includes('/new') ||
-          (method === 'post' && !url.includes('/update'))
-        ) {
-          entityPerms.model = permission;
-        } else if (
-          url.includes('/view') || 
+          url.includes('/view') ||
           url.includes('/detail') ||
           (method === 'get' && url.match(/\/[^/]+\/\d+$/))
         ) {
           entityPerms.view = permission;
         } else if (
-          method === 'get' && 
-          !url.includes('/view') && 
-          !url.includes('/detail') && 
-          !url.match(/\/[^/]+\/\d+$/)
+          method === 'get' &&
+          !url.includes('/view') &&
+          !url.includes('/detail')
         ) {
           entityPerms.list = permission;
         } else if (
-          url.includes('/update') || 
+          url.includes('/create') ||
+          url.includes('/new') ||
+          (method === 'post' && !url.includes('/update'))
+        ) {
+          entityPerms.create = permission;
+        } else if (
+          url.includes('/update') ||
           url.includes('/edit') ||
-          method === 'put' || 
+          method === 'put' ||
           method === 'patch'
         ) {
           entityPerms.update = permission;
         } else if (
-          url.includes('/delete') || 
+          url.includes('/delete') ||
           url.includes('/remove') ||
           method === 'delete'
         ) {
@@ -96,42 +86,56 @@ const RolePermissionManager: React.FC<RolePermissionManagerProps> = ({
         }
       });
 
-      // Si algún permiso no se asignó, crear uno dummy con ID único
+      // Crear permisos dummy para los que faltan
       if (!entityPerms.view) {
         entityPerms.view = {
-          id: dummyIdCounter--, // ID único y negativo
+          id: dummyIdCounter--,
           url: `/${group.entity.toLowerCase()}/view`,
           method: 'GET',
+          entity: group.entity,
           has_permission: false,
-          is_dummy: true
-        } as DummyPermission;
+          is_dummy: true,
+        };
       }
       if (!entityPerms.list) {
         entityPerms.list = {
-          id: dummyIdCounter--, // ID único y negativo
+          id: dummyIdCounter--,
           url: `/${group.entity.toLowerCase()}`,
           method: 'GET',
+          entity: group.entity,
           has_permission: false,
-          is_dummy: true
-        } as DummyPermission;
+          is_dummy: true,
+        };
+      }
+      if (!entityPerms.create) {
+        entityPerms.create = {
+          id: dummyIdCounter--,
+          url: `/${group.entity.toLowerCase()}/create`,
+          method: 'POST',
+          entity: group.entity,
+          has_permission: false,
+          is_dummy: true,
+        };
       }
       if (!entityPerms.update) {
         entityPerms.update = {
-          id: dummyIdCounter--, // ID único y negativo
+          id: dummyIdCounter--,
           url: `/${group.entity.toLowerCase()}/update`,
           method: 'PUT',
+          entity: group.entity,
           has_permission: false,
-          is_dummy: true
-        } as DummyPermission;
+          is_dummy: true,
+        };
       }
       if (!entityPerms.delete) {
         entityPerms.delete = {
-          id: dummyIdCounter--, // ID único y negativo
+          id: dummyIdCounter--,
           url: `/${group.entity.toLowerCase()}/delete`,
           method: 'DELETE',
+          entity: group.entity,
           has_permission: false,
-          is_dummy: true
-        } as DummyPermission;
+          is_dummy: true,
+        };
       }
 
       return entityPerms;
@@ -142,21 +146,39 @@ const RolePermissionManager: React.FC<RolePermissionManagerProps> = ({
     try {
       setLoading(true);
       const permissions = await permissionService.getGroupedByRole(role.id!);
-      setGroupedPermissions(permissions);
-      
-      // Cambiar "roles" por "Permission" en la última fila
       const organized = organizePermissions(permissions);
-      const updatedOrganized = organized.map(entity => {
-        if (entity.entity.toLowerCase() === 'roles') {
-          return {
-            ...entity,
-            entity: 'Permission'
-          };
-        }
-        return entity;
-      });
-      
-      setOrganizedPermissions(updatedOrganized);
+
+      // Cargar estados de permisos dummy desde localStorage
+      const savedDummies = dummyPermissionService.getDummyPermissions(role.id!);
+      if (savedDummies.length > 0) {
+        console.log('📂 Loaded dummy permissions from storage:', savedDummies);
+
+        // Aplicar estados guardados a los permisos dummy
+        const updatedOrganized = organized.map((entity) => {
+          const updated = { ...entity };
+
+          (['view', 'list', 'create', 'update', 'delete'] as const).forEach(
+            (permType) => {
+              const perm = updated[permType];
+              if (perm?.is_dummy) {
+                const saved = savedDummies.find(
+                  (sp) => sp.entity === entity.entity && sp.url === perm.url,
+                );
+                if (saved) {
+                  updated[permType] = {
+                    ...perm,
+                    has_permission: saved.has_permission ?? false,
+                  };
+                }
+              }
+            },
+          );
+          return updated;
+        });
+        setOrganizedPermissions(updatedOrganized);
+      } else {
+        setOrganizedPermissions(organized);
+      }
     } catch (error) {
       console.error('Error loading permissions:', error);
       Swal.fire({
@@ -172,55 +194,21 @@ const RolePermissionManager: React.FC<RolePermissionManagerProps> = ({
   const handlePermissionToggle = async (
     permissionId: number,
     currentState: boolean,
-    isDummy: boolean = false
+    isDummy: boolean,
   ) => {
     try {
-      // Si es un permiso dummy, actualizar el estado visual pero no guardar en BD
-      if (isDummy) {
-        console.log('Permiso dummy clickeado:', permissionId);
-        
-        // Actualizar el estado visual del checkbox dummy
-        const updatedPermissions = organizedPermissions.map((entity) => ({
-          ...entity,
-          model:
-            entity.model?.id === permissionId
-              ? { ...entity.model, has_permission: !currentState }
-              : entity.model,
-          view:
-            entity.view?.id === permissionId
-              ? { ...entity.view, has_permission: !currentState }
-              : entity.view,
-          list:
-            entity.list?.id === permissionId
-              ? { ...entity.list, has_permission: !currentState }
-              : entity.list,
-          update:
-            entity.update?.id === permissionId
-              ? { ...entity.update, has_permission: !currentState }
-              : entity.update,
-          delete:
-            entity.delete?.id === permissionId
-              ? { ...entity.delete, has_permission: !currentState }
-              : entity.delete,
-        }));
-
-        setOrganizedPermissions(updatedPermissions);
-        return;
+      if (!isDummy) {
+        // Permiso real - actualizar en backend
+        if (currentState) {
+          await rolePermissionService.delete(role.id!, permissionId);
+        } else {
+          await rolePermissionService.create(role.id!, permissionId);
+        }
       }
 
-      // Para permisos reales, guardar en BD
-      if (currentState) {
-        await rolePermissionService.delete(role.id!, permissionId);
-      } else {
-        await rolePermissionService.create(role.id!, permissionId);
-      }
-
+      // Actualizar estado local (tanto para reales como dummy)
       const updatedPermissions = organizedPermissions.map((entity) => ({
         ...entity,
-        model:
-          entity.model?.id === permissionId
-            ? { ...entity.model, has_permission: !currentState }
-            : entity.model,
         view:
           entity.view?.id === permissionId
             ? { ...entity.view, has_permission: !currentState }
@@ -229,6 +217,10 @@ const RolePermissionManager: React.FC<RolePermissionManagerProps> = ({
           entity.list?.id === permissionId
             ? { ...entity.list, has_permission: !currentState }
             : entity.list,
+        create:
+          entity.create?.id === permissionId
+            ? { ...entity.create, has_permission: !currentState }
+            : entity.create,
         update:
           entity.update?.id === permissionId
             ? { ...entity.update, has_permission: !currentState }
@@ -240,6 +232,20 @@ const RolePermissionManager: React.FC<RolePermissionManagerProps> = ({
       }));
 
       setOrganizedPermissions(updatedPermissions);
+
+      // Guardar permisos dummy en localStorage
+      const dummyPerms: PermissionWithStatus[] = [];
+      updatedPermissions.forEach((entity) => {
+        (['view', 'list', 'create', 'update', 'delete'] as const).forEach(
+          (permType) => {
+            const perm = entity[permType];
+            if (perm?.is_dummy && perm.has_permission) {
+              dummyPerms.push(perm);
+            }
+          },
+        );
+      });
+      dummyPermissionService.saveDummyPermissions(role.id!, dummyPerms);
     } catch (error) {
       console.error('Error updating permission:', error);
       Swal.fire({
@@ -250,166 +256,132 @@ const RolePermissionManager: React.FC<RolePermissionManagerProps> = ({
     }
   };
 
-  const handleSaveAll = async () => {
-    try {
-      setSaving(true);
-
-      const selectedPermissionIds: number[] = [];
-      organizedPermissions.forEach((entity) => {
-        [
-          entity.model,
-          entity.view,
-          entity.list,
-          entity.update,
-          entity.delete,
-        ].forEach((permission) => {
-          // Solo incluir permisos reales (ID positivo) en el guardado
-          if (permission?.has_permission && permission.id && permission.id > 0) {
-            selectedPermissionIds.push(permission.id);
-          }
-        });
-      });
-
-      await rolePermissionService.bulkAssign(role.id!, selectedPermissionIds);
-
-      Swal.fire({
-        title: 'Guardado',
-        text: 'Los permisos han sido actualizados correctamente',
-        icon: 'success',
-        timer: 2000,
-      });
-
-      onClose();
-    } catch (error) {
-      console.error('Error saving permissions:', error);
-      Swal.fire({
-        title: 'Error',
-        text: 'No se pudieron guardar los permisos',
-        icon: 'error',
-      });
-    } finally {
-      setSaving(false);
-    }
+  const handleSave = () => {
+    Swal.fire({
+      title: 'Guardado',
+      text: 'Los permisos han sido actualizados correctamente',
+      icon: 'success',
+      timer: 2000,
+    });
+    onClose();
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center p-8">
-        <p className="text-black dark:text-white">Cargando permisos...</p>
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-lg shadow-xl p-8">
+          <p className="text-gray-800">Cargando permisos...</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-        <div className="border-b border-gray-200 p-6">
-          <h2 className="text-2xl font-bold text-gray-800">Gestión de roles</h2>
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header con botón de cerrar */}
+        <div className="border-b border-gray-200 px-6 py-4 bg-gray-50 flex justify-between items-center">
+          <h2 className="text-2xl font-bold text-gray-800">
+            {role.name} - Permissions
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 transition-colors"
+            aria-label="Close"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
         </div>
 
-        <div className="p-6 overflow-y-auto max-h-[60vh]">
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
           <div className="border border-gray-300 rounded-lg overflow-hidden">
             <table className="w-full">
-              <thead className="bg-gray-100 border-b border-gray-300">
+              <thead className="bg-gray-100">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase border-r border-gray-300">
-                    MODELO
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 w-48">
+                    Model
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase border-r border-gray-300">
-                    VISTA
+                  <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300">
+                    View
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase border-r border-gray-300">
-                    LISTA
+                  <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300">
+                    List
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase border-r border-gray-300">
-                    ACTUALIZAR
+                  <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300">
+                    Create
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase">
-                    BORRAR
+                  <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300">
+                    Update
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    Delete
                   </th>
                 </tr>
               </thead>
-              <tbody>
-                {organizedPermissions.map((entity) => (
+              <tbody className="bg-white divide-y divide-gray-200">
+                {organizedPermissions.map((entity, index) => (
                   <tr
-                    key={entity.entity}
-                    className="hover:bg-gray-50 border-t border-gray-300"
+                    key={index}
+                    className="hover:bg-gray-50 transition-colors"
                   >
-                    <td className="px-4 py-2 border-r border-gray-300 font-medium text-gray-800">
+                    <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900 border-r border-gray-200">
                       {entity.entity}
                     </td>
-                    
-                    {/* Columna VISTA con 1 checkbox */}
-                    <td className="px-4 py-2 border-r border-gray-300">
-                      <div className="flex justify-center">
-                        <input
-                          type="checkbox"
-                          checked={entity.view?.has_permission || false}
-                          onChange={() =>
-                            handlePermissionToggle(
-                              entity.view!.id!,
-                              entity.view!.has_permission || false,
-                              (entity.view as DummyPermission)?.is_dummy || false
-                            )
-                          }
-                          className="w-5 h-5 text-blue-600 border-gray-400 rounded focus:ring-blue-500 focus:ring-2"
-                        />
-                      </div>
-                    </td>
 
-                    {/* Columna LISTA con 1 checkbox */}
-                    <td className="px-4 py-2 border-r border-gray-300">
-                      <div className="flex justify-center">
-                        <input
-                          type="checkbox"
-                          checked={entity.list?.has_permission || false}
-                          onChange={() =>
-                            handlePermissionToggle(
-                              entity.list!.id!,
-                              entity.list!.has_permission || false,
-                              (entity.list as DummyPermission)?.is_dummy || false
-                            )
-                          }
-                          className="w-5 h-5 text-blue-600 border-gray-400 rounded focus:ring-blue-500 focus:ring-2"
-                        />
-                      </div>
-                    </td>
+                    {(
+                      ['view', 'list', 'create', 'update', 'delete'] as const
+                    ).map((permType, idx) => {
+                      const perm = entity[permType];
+                      const isLast = idx === 4;
 
-                    {/* Columna ACTUALIZAR con 1 checkbox */}
-                    <td className="px-4 py-2 border-r border-gray-300">
-                      <div className="flex justify-center">
-                        <input
-                          type="checkbox"
-                          checked={entity.update?.has_permission || false}
-                          onChange={() =>
-                            handlePermissionToggle(
-                              entity.update!.id!,
-                              entity.update!.has_permission || false,
-                              (entity.update as DummyPermission)?.is_dummy || false
-                            )
-                          }
-                          className="w-5 h-5 text-blue-600 border-gray-400 rounded focus:ring-blue-500 focus:ring-2"
-                        />
-                      </div>
-                    </td>
-
-                    {/* Columna BORRAR con 1 checkbox */}
-                    <td className="px-4 py-2">
-                      <div className="flex justify-center">
-                        <input
-                          type="checkbox"
-                          checked={entity.delete?.has_permission || false}
-                          onChange={() =>
-                            handlePermissionToggle(
-                              entity.delete!.id!,
-                              entity.delete!.has_permission || false,
-                              (entity.delete as DummyPermission)?.is_dummy || false
-                            )
-                          }
-                          className="w-5 h-5 text-blue-600 border-gray-400 rounded focus:ring-blue-500 focus:ring-2"
-                        />
-                      </div>
-                    </td>
+                      return (
+                        <td
+                          key={permType}
+                          className={`px-6 py-4 text-center ${
+                            !isLast ? 'border-r border-gray-200' : ''
+                          }`}
+                        >
+                          <div className="flex justify-center items-center">
+                            {perm ? (
+                              <div className="relative group">
+                                <input
+                                  type="checkbox"
+                                  checked={perm.has_permission || false}
+                                  onChange={() =>
+                                    handlePermissionToggle(
+                                      perm.id!,
+                                      perm.has_permission || false,
+                                      perm.is_dummy || false,
+                                    )
+                                  }
+                                  className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
+                                />
+                                {perm.is_dummy && (
+                                  <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                                    Dummy Permission
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </div>
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))}
               </tbody>
@@ -417,20 +389,38 @@ const RolePermissionManager: React.FC<RolePermissionManagerProps> = ({
           </div>
 
           {organizedPermissions.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No hay permisos disponibles</p>
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg">
+                No hay permisos disponibles
+              </p>
             </div>
           )}
         </div>
-        <div className="border-t border-gray-200 p-6 bg-gray-50">
-          <div className="flex justify-end">
-            <button
-              onClick={onClose}
-              className="px-8 py-3 border border-gray-400 rounded text-gray-700 hover:bg-gray-100 transition-colors font-medium text-base"
-            >
-              Cancelar
-            </button>
-          </div>
+
+        {/* Footer */}
+        <div className="border-t border-stroke px-6 py-4 bg-whiten dark:bg-boxdark flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            disabled={saving}
+            className="px-6 py-2.5 rounded-lg border border-stroke text-body font-semibold transition-all duration-200 
+               hover:bg-gray dark:hover:bg-graydark focus:ring-2 focus:ring-secondary 
+               disabled:opacity-65 disabled:cursor-not-allowed shadow-1"
+          >
+            Cancelar
+          </button>
+
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className={`px-6 py-2.5 rounded-lg text-white font-semibold transition-all duration-200 
+               ${
+                 saving
+                   ? 'bg-primary opacity-65 cursor-not-allowed'
+                   : 'bg-primary hover:bg-blue-700 focus:ring-2 focus:ring-primary shadow-2'
+               }`}
+          >
+            {saving ? 'Guardando...' : 'Aceptar'}
+          </button>
         </div>
       </div>
     </div>

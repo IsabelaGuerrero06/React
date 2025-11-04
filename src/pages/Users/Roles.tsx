@@ -107,7 +107,6 @@ const UsersRoles: React.FC = () => {
       setSelectedRole(role);
       setShowPermissionManager(true); // NUEVO: Abrir el RolePermissionManager
       setModalType("permissions");
-      setIsModalOpen(true);
     } else if (action === "userRole") {
       navigate(`/user-role/${role.id}`);
     }
