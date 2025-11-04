@@ -27,22 +27,9 @@ class ProfileAdapter {
       id: backendData.id,
       userId: backendData.user_id,
       fullName:
-        backendData.fullName && backendData.fullName.trim() !== ''
-          ? backendData.fullName
-          : backendData.name ||
-            (() => {
-              const storedUser = localStorage.getItem('user');
-              const hasSession =
-                localStorage.getItem('accessToken') ||
-                localStorage.getItem('currentUserId');
-              if (!hasSession) {
-                return backendData.fullName || backendData.name || 'Usuario sin nombre';
-              }
-              if (storedUser) {
-                return JSON.parse(storedUser).name || 'Usuario sin nombre';
-              }
-              return 'Usuario sin nombre';
-            })(),
+    backendData.fullName && backendData.fullName.trim() !== ''
+      ? backendData.fullName
+      : backendData.name || 'Usuario sin nombre',
       phone: backendData.phone || '',
       address: backendData.address || '',
       about: backendData.about || '',

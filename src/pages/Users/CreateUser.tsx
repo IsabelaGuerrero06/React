@@ -32,13 +32,21 @@ const CreateUser: React.FC = () => {
   // Función unificada para crear usuario
   const handleCreateUser = async (data: Record<string, any> | User) => {
     try {
+      // Crear el usuario primero
       const createdUser = await userService.createUser(data as User);
 
       if (createdUser) {
+        // Preparar FormData para el perfil
         const formData = new FormData();
-        formData.append("phone", "");
-        formData.append("fullName", createdUser.name || "Usuario sin nombre");
+        formData.append(
+          "fullName",
+          createdUser.name || "Usuario sin nombre"
+        );
+        formData.append("email", createdUser.email || "");
+        const phone = "phone" in data ? (data as any).phone : "";
+        formData.append("phone", phone);
 
+        // Crear perfil con los datos correctos del usuario
         await createProfile(createdUser.id!, formData);
 
         Swal.fire({
