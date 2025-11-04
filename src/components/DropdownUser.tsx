@@ -8,6 +8,7 @@ import UserOne from '../images/user/user-01.png';
 
 const DropdownUser = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [localUser, setLocalUser] = useState<any>(null); // ✅ nuevo estado para detectar cambios inmediatos
   const user = useSelector((state: RootState) => state.user.user);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -15,7 +16,30 @@ const DropdownUser = () => {
   const trigger = useRef<any>(null);
   const dropdown = useRef<any>(null);
 
-  // close on click outside
+  // ✅ Actualiza el usuario local cada vez que cambia en localStorage
+  useEffect(() => {
+    const loadUser = () => {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        setLocalUser(JSON.parse(storedUser));
+      }
+    };
+
+    loadUser();
+
+    // Escucha los cambios en el localStorage (cuando se actualiza la foto, por ejemplo)
+    window.addEventListener('storage', loadUser);
+
+    // También revisa cada pocos segundos si cambia el user local (para cambios en misma pestaña)
+    const interval = setInterval(loadUser, 1000);
+
+    return () => {
+      window.removeEventListener('storage', loadUser);
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Cerrar dropdown al hacer clic fuera
   useEffect(() => {
     const clickHandler = ({ target }: MouseEvent) => {
       if (!dropdown.current) return;
@@ -31,7 +55,7 @@ const DropdownUser = () => {
     return () => document.removeEventListener('click', clickHandler);
   });
 
-  // close if the esc key is pressed
+  // Cerrar con tecla ESC
   useEffect(() => {
     const keyHandler = ({ keyCode }: KeyboardEvent) => {
       if (!dropdownOpen || keyCode !== 27) return;
@@ -48,6 +72,11 @@ const DropdownUser = () => {
     navigate('/auth/signin');
   };
 
+  // ✅ Decide cuál usuario mostrar (Redux o localStorage)
+  const currentUser = localUser || user;
+  const avatarUrl = currentUser?.avatarUrl || UserOne;
+  const userName = currentUser?.name || 'Usuario';
+
   return (
     <div className="relative">
       <Link
@@ -58,17 +87,17 @@ const DropdownUser = () => {
       >
         <span className="hidden text-right lg:block">
           <span className="block text-sm font-medium text-black dark:text-white">
-            {user?.name || 'Usuario'}
+            {userName}
           </span>
           <span className="block text-xs">UX Designer</span>
         </span>
 
-        {/* Imagen de perfil dinámica */}
+        {/* ✅ Imagen de perfil dinámica (instantánea) */}
         <span className="h-12 w-12 rounded-full">
           <img
-            src={user?.avatarUrl || UserOne}
-            alt={user?.name || "User"}
-            className="w-full h-full object-cover rounded-full"
+            src={avatarUrl}
+            alt={userName}
+            className="w-full h-full object-cover rounded-full transition-all duration-300"
           />
         </span>
 
@@ -102,7 +131,6 @@ const DropdownUser = () => {
               to="/profile"
               className="flex items-center gap-3.5 text-sm font-medium duration-300 ease-in-out hover:text-primary lg:text-base"
             >
-              {/* SVG icon */}
               My Profile
             </Link>
           </li>
@@ -111,7 +139,6 @@ const DropdownUser = () => {
               to="#"
               className="flex items-center gap-3.5 text-sm font-medium duration-300 ease-in-out hover:text-primary lg:text-base"
             >
-              {/* SVG icon */}
               My Contacts
             </Link>
           </li>
@@ -120,7 +147,6 @@ const DropdownUser = () => {
               to="/settings"
               className="flex items-center gap-3.5 text-sm font-medium duration-300 ease-in-out hover:text-primary lg:text-base"
             >
-              {/* SVG icon */}
               Account Settings
             </Link>
           </li>
@@ -129,7 +155,6 @@ const DropdownUser = () => {
           onClick={handleLogout}
           className="flex items-center gap-3.5 py-4 px-6 text-sm font-medium duration-300 ease-in-out hover:text-primary lg:text-base"
         >
-          {/* SVG icon */}
           Log Out
         </button>
       </div>
