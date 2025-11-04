@@ -111,7 +111,6 @@ const Permissions: React.FC = () => {
 
   return (
     <div className={getContainerStyles()}>
-      <Breadcrumb pageName="Permissions" />
 
       {/* Header con título y botón */}
       <div className="flex items-center justify-between mb-4">
