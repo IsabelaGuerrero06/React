@@ -1,9 +1,10 @@
 import { lazy } from 'react';
-import ListUsers from '../pages/Users/ListUser';
 import PasswordCreate from '../pages/Users/PasswordCreate';
-import UsersRoles from '../pages/Users/Roles';
+import ListUsers from '../pages/Users/ListUser';
+import ViewUser from '../pages/Users/ViewUser';
 import CreateUser from '../pages/Users/CreateUser';
 import UpdateUser from '../pages/Users/UpdateUser';
+import UsersRoles from '../pages/Users/Roles';
 import UserAddress from '../pages/Users/UserAddress';
 import Permissions from '../pages/Permissions/Permissions';
 import ListSecurityQuestions from '../pages/SecurityQuestions/ListSecurityQuestion';
@@ -157,6 +158,11 @@ const coreRoutes = [
     path: '/users/list',
     title: 'List Users',
     component: ListUsers,
+  },
+  {
+    path: '/users/:id',
+    title: 'List An Specific User',
+    component: ViewUser,
   },
   {
     path: '/users/create',

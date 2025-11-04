@@ -61,7 +61,7 @@ const ListUsers: React.FC = () => {
     const userWithRole = item as UserWithRole;
     
     if (action === "view") {
-      navigate(`/user/${userWithRole.id}`);
+      navigate(`/users/${userWithRole.id}`);
     } else if (action === "edit") {
       navigate(`/users/update/${userWithRole.id}`);
     } else if (action === "delete") {
