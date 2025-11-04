@@ -2,7 +2,7 @@ import axios from "axios";
 import { User } from "../models/User";
 import { store } from "../store/store";
 import { setUser } from "../store/userSlice";
-import { oauthSessionSync } from './auth/OAuthSessionSyncService';
+// ❌ REMOVIDO: import { oauthSessionSync } from './auth/OAuthSessionSyncService';
 import { getOrCreateProfileByUserId } from "../services/ProfileService";
 
 class SecurityService extends EventTarget {
@@ -46,11 +46,9 @@ class SecurityService extends EventTarget {
         store.dispatch(setUser(userObj));
         this.dispatchEvent(new CustomEvent("userChange", { detail: userObj }));
 
-        // 🩵 Guardar el ID actual del usuario
         if (userObj.id) {
           localStorage.setItem("currentUserId", String(userObj.id));
 
-          // 🧩 Crear o verificar perfil automáticamente solo si NO estás creando usuarios como admin
           const isAdminCreatingUser = window.location.pathname.includes("/users/create");
           if (!isAdminCreatingUser) {
             try {
@@ -99,12 +97,9 @@ class SecurityService extends EventTarget {
       if (user.id) {
         localStorage.setItem("currentUserId", String(user.id));
 
-        // 🆕 SINCRONIZAR SESIÓN OAuth CON BD
-        try {
-          await oauthSessionSync.syncOAuthSession(user.id, token);
-        } catch (error) {
-          console.error('⚠️ Error sincronizando sesión OAuth:', error);
-        }
+        // ❌ ELIMINADO: Sincronización de sesión OAuth (ya se hace en los providers)
+        // Los providers (Google/Microsoft) ya llaman a oauthSessionSync.syncOAuthSession()
+        // por lo que NO necesitamos hacerlo aquí de nuevo
 
         // Crear o verificar perfil automáticamente
         const isAdminCreatingUser = window.location.pathname.includes("/users/create");
