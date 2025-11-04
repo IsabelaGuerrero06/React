@@ -1,5 +1,6 @@
 import { lazy } from 'react';
 import ListUsers from '../pages/Users/ListUser';
+import PasswordCreate from '../pages/Users/PasswordCreate';
 import UsersRoles from '../pages/Users/Roles';
 import CreateUser from '../pages/Users/CreateUser';
 import UpdateUser from '../pages/Users/UpdateUser';
@@ -193,6 +194,11 @@ const coreRoutes = [
     path: '/sessions/:id',
     title: 'User Sessions',
     component: UserSessionsWrapper,
+  },
+  {
+    path: '/passwords/:userId',
+    title: 'User Passwords',
+    component: PasswordCreate,
   },
   // Profiles
   {
