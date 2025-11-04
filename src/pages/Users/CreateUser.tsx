@@ -1,9 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import Breadcrumb from "../../components/Breadcrumb";
 import GenericForm, { FormField } from "../../components/GenericForm";
-import UserFormValidator from "../../components/UserFormValidator";
 import { userService } from "../../services/userService";
 import { createProfile } from "../../services/ProfileService";
 import { deviceService } from "../../services/deviceService";
@@ -129,12 +127,9 @@ const CreateUser: React.FC = () => {
 
   return (
     <div className="p-6">
-      <Breadcrumb pageName="Crear Usuario" />
       <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">
         Create User
       </h2>
-
-      <UserFormValidator handleCreate={handleCreateUser} mode={1} />
 
       <GenericForm
         fields={formFields}
