@@ -27,9 +27,26 @@ class ProfileAdapter {
       id: backendData.id,
       userId: backendData.user_id,
       fullName:
-    backendData.fullName && backendData.fullName.trim() !== ''
-      ? backendData.fullName
-      : backendData.name || 'Usuario sin nombre',
+        backendData.fullName && backendData.fullName.trim() !== ''
+          ? backendData.fullName
+          : backendData.name ||
+            (() => {
+              const storedUser = localStorage.getItem('user');
+              const hasSession =
+                localStorage.getItem('accessToken') ||
+                localStorage.getItem('currentUserId');
+              if (!hasSession) {
+                return (
+                  backendData.fullName ||
+                  backendData.name ||
+                  'Usuario sin nombre'
+                );
+              }
+              if (storedUser) {
+                return JSON.parse(storedUser).name || 'Usuario sin nombre';
+              }
+              return 'Usuario sin nombre';
+            })(),
       phone: backendData.phone || '',
       address: backendData.address || '',
       about: backendData.about || '',
@@ -86,27 +103,27 @@ export const getProfileByUserId = async (userId: number): Promise<Profile> => {
 export const getOrCreateProfileByUserId = async (userId: number) => {
   try {
     const { data } = await axios.get(`${API_URL}/api/profiles/user/${userId}`);
-    console.log("✅ Perfil encontrado en backend:", data);
+    console.log('✅ Perfil encontrado en backend:', data);
     return ProfileAdapter.toFrontendModel(data);
   } catch (error: any) {
     if (error.response?.status === 404) {
-      console.log("🆕 No existe perfil, creando uno nuevo...");
+      console.log('🆕 No existe perfil, creando uno nuevo...');
       const formData = new FormData();
-      formData.append("phone", "");
-      formData.append("fullName", "");
-      formData.append("email", ""); // para el backend
+      formData.append('phone', '');
+      formData.append('fullName', '');
+      formData.append('email', ''); // para el backend
 
       const { data: newProfile } = await axios.post(
         `${API_URL}/api/profiles/user/${userId}`,
         formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
+        { headers: { 'Content-Type': 'multipart/form-data' } },
       );
 
-      console.log("✅ Perfil creado automáticamente:", newProfile);
+      console.log('✅ Perfil creado automáticamente:', newProfile);
       return ProfileAdapter.toFrontendModel(newProfile);
     }
 
-    console.error("❌ Error inesperado al obtener/crear perfil:", error);
+    console.error('❌ Error inesperado al obtener/crear perfil:', error);
     throw error;
   }
 };
