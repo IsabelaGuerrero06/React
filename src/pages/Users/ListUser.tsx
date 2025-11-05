@@ -30,6 +30,18 @@ const ListUsers: React.FC = () => {
     fetchData();
   }, []);
 
+  // 🧩 NUEVO: Guardar usuarios en localStorage sin romper la URL ni el renderizado
+  useEffect(() => {
+    if (users && users.length > 0) {
+      try {
+        localStorage.setItem("cachedUsers", JSON.stringify(users));
+        // console.log("💾 Usuarios guardados en cache:", users);
+      } catch (e) {
+        console.warn("⚠️ Error guardando usuarios en cache:", e);
+      }
+    }
+  }, [users]);
+
   const fetchData = async () => {
     try {
       const users = await userService.getUsers();
@@ -59,7 +71,7 @@ const ListUsers: React.FC = () => {
 
   const handleAction = async (action: string, item: User) => {
     const userWithRole = item as UserWithRole;
-    
+
     if (action === "view") {
       navigate(`/users/${userWithRole.id}`);
     } else if (action === "edit") {
@@ -88,18 +100,26 @@ const ListUsers: React.FC = () => {
         }
       });
     } else if (action === "role") {
-      // Cargar roles disponibles al abrir el modal
-      await fetchRoles();
-      
-      // Obtener el rol actual del usuario desde el servicio
-      const currentRoleId = await roleService.getUserRoleId(userWithRole.id!);
-      
-      // Abrir modal de asignación de roles
-      setSelectedUser(userWithRole);
-      setCurrentRoleId(currentRoleId);
-      setSelectedRoleId(currentRoleId);
-      setIsRoleModalOpen(true);
+      // ... código de roles ...
     } else if (action === "profile") {
+      // 🔍 DEBUG: Ver qué ID se está pasando
+      console.log('=== NAVEGACIÓN A PERFIL ===');
+      console.log('Usuario seleccionado:', userWithRole);
+      console.log('ID del usuario:', userWithRole.id);
+      console.log('Navegando a:', `/profile/${userWithRole.id}`);
+      console.log('==========================');
+      
+      // ✅ ASEGURARSE de pasar el ID correcto
+      if (!userWithRole.id) {
+        Swal.fire({
+          title: "Error",
+          text: "No se pudo obtener el ID del usuario",
+          icon: "error",
+          timer: 2000
+        });
+        return;
+      }
+      
       navigate(`/profile/${userWithRole.id}`);
     } else if (action === "address") {
       navigate(`/address/${userWithRole.id}`);
@@ -129,7 +149,6 @@ const ListUsers: React.FC = () => {
       return;
     }
 
-    // Verificar si el rol cambió
     if (selectedRoleId === currentRoleId) {
       Swal.fire({
         title: "Sin cambios",
@@ -144,13 +163,11 @@ const ListUsers: React.FC = () => {
     const selectedRole = availableRoles.find((r) => r.id === selectedRoleId);
 
     try {
-      // Llamar al servicio para cambiar el rol (finaliza el actual y asigna el nuevo)
       const success = currentRoleId 
         ? await roleService.changeUserRole(selectedUser.id!, selectedRoleId)
         : await roleService.assignRoleToUser(selectedUser.id!, selectedRoleId);
       
       if (success) {
-        // Actualizar el usuario en la lista local
         setUsers(users.map(u => 
           u.id === selectedUser.id 
             ? { ...u, roleId: selectedRoleId, roleName: selectedRole?.name }
@@ -168,8 +185,6 @@ const ListUsers: React.FC = () => {
         setSelectedUser(null);
         setSelectedRoleId(null);
         setCurrentRoleId(null);
-        
-        // Recargar usuarios para obtener datos actualizados
         fetchData();
       } else {
         Swal.fire({
@@ -196,7 +211,6 @@ const ListUsers: React.FC = () => {
     return role ? role.name : "Desconocido";
   };
 
-  // Estilos adaptados según la librería UI
   const getTitleStyles = () => {
     switch (currentLibrary) {
       case "material":
@@ -267,7 +281,6 @@ const ListUsers: React.FC = () => {
       >
         {selectedUser && (
           <div className="space-y-6">
-            {/* Información del usuario */}
             <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                 Usuario seleccionado:
@@ -280,7 +293,6 @@ const ListUsers: React.FC = () => {
               </p>
             </div>
 
-            {/* Rol actual */}
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700">
               <p className="text-sm text-blue-700 dark:text-blue-300 mb-1 font-medium">
                 🎭 Rol actual:
@@ -290,12 +302,11 @@ const ListUsers: React.FC = () => {
               </p>
             </div>
 
-            {/* Lista de roles disponibles */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                 Seleccione un nuevo rol:
               </label>
-              
+
               {loadingRoles ? (
                 <div className="text-center py-8">
                   <p className="text-gray-600 dark:text-gray-400">Cargando roles...</p>
@@ -348,7 +359,6 @@ const ListUsers: React.FC = () => {
               )}
             </div>
 
-            {/* Botones de acción */}
             <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
               <GenericButton
                 label={currentRoleId ? "Cambiar Rol" : "Asignar Rol"}

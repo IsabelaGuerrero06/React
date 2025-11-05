@@ -12,41 +12,93 @@ class ProfileAdapter {
    * Convierte la respuesta del backend al modelo Profile del frontend
    */
   static toFrontendModel(backendData: any): Profile {
-    // Ajuste automático del email si no viene del backend
+    const currentUserId = localStorage.getItem('currentUserId');
+    const storedUser = localStorage.getItem('user');
+    const parsedUser = storedUser ? JSON.parse(storedUser) : null;
+
+    // ✅ Determinar si el perfil pertenece al usuario autenticado
+    const isAuthenticatedProfile =
+      currentUserId && Number(currentUserId) === Number(backendData.user_id);
+
+    // ✅ Email: usar el del backend o, si no viene, solo usar localStorage si es el autenticado
     let email =
       backendData.email ||
       backendData.user_email ||
-      (() => {
-        const storedUser = localStorage.getItem('user');
-        return storedUser && JSON.parse(storedUser).email
-          ? JSON.parse(storedUser).email
-          : 'No especificado';
-      })();
+      (isAuthenticatedProfile && parsedUser?.email) ||
+      'No especificado';
+
+    // 🧩 NUEVO BLOQUE: si no hay email, intentar recuperar desde sessionStorage (usuario recién creado)
+    if (!backendData.email || backendData.email === '') {
+      const lastCreatedUser = sessionStorage.getItem('lastCreatedUser');
+      if (lastCreatedUser) {
+        try {
+          const parsed = JSON.parse(lastCreatedUser);
+          if (parsed?.id === backendData.user_id && parsed?.email) {
+            email = parsed.email;
+          }
+        } catch {
+          console.warn('⚠️ Error al parsear lastCreatedUser para email');
+        }
+      }
+    }
+
+    // ✅ Nombre completo: priorizar backend, luego name, luego fallback seguro
+    let fullName = backendData.fullName?.trim()
+      ? backendData.fullName
+      : backendData.name || 'Usuario sin nombre';
+
+    // ⚠️ Solo en caso de que sea el usuario autenticado y no tenga nombre, usar localStorage
+    if (
+      (!backendData.fullName || backendData.fullName.trim() === '') &&
+      isAuthenticatedProfile &&
+      parsedUser?.name
+    ) {
+      fullName = parsedUser.name;
+    }
+
+    // 🧩 NUEVO BLOQUE: si el backend no envió nombre, intentar con sessionStorage (usuario recién creado)
+    if (
+      (!backendData.fullName || backendData.fullName.trim() === '') &&
+      (!backendData.name || backendData.name.trim() === '')
+    ) {
+      const lastCreatedUser = sessionStorage.getItem('lastCreatedUser');
+      if (lastCreatedUser) {
+        try {
+          const parsed = JSON.parse(lastCreatedUser);
+          if (parsed?.id === backendData.user_id && parsed?.name) {
+            fullName = parsed.name;
+          }
+        } catch {
+          console.warn('⚠️ Error al parsear lastCreatedUser para fullName');
+        }
+      }
+    }
+
+    // 🧩 BLOQUE FINAL: intentar recuperar nombre/email desde cachedUsers (persistente)
+    if (
+      (!fullName || fullName === 'Usuario sin nombre') ||
+      !email ||
+      email === 'No especificado'
+    ) {
+      try {
+        const usersCache = localStorage.getItem('cachedUsers');
+        if (usersCache) {
+          const users = JSON.parse(usersCache);
+          const foundUser = users.find((u: any) => u.id === backendData.user_id);
+          if (foundUser) {
+            fullName = foundUser.name || fullName;
+            email = foundUser.email || email;
+          }
+        }
+      } catch (e) {
+        console.warn('⚠️ Error leyendo cachedUsers:', e);
+      }
+    }
 
     return {
       id: backendData.id,
       userId: backendData.user_id,
-      fullName:
-        backendData.fullName && backendData.fullName.trim() !== ''
-          ? backendData.fullName
-          : backendData.name ||
-            (() => {
-              const storedUser = localStorage.getItem('user');
-              const hasSession =
-                localStorage.getItem('accessToken') ||
-                localStorage.getItem('currentUserId');
-              if (!hasSession) {
-                return (
-                  backendData.fullName ||
-                  backendData.name ||
-                  'Usuario sin nombre'
-                );
-              }
-              if (storedUser) {
-                return JSON.parse(storedUser).name || 'Usuario sin nombre';
-              }
-              return 'Usuario sin nombre';
-            })(),
+      fullName,
       phone: backendData.phone || '',
       address: backendData.address || '',
       about: backendData.about || '',
@@ -76,6 +128,12 @@ class ProfileAdapter {
     const phone = data.get('phone');
     if (phone) {
       backendFormData.append('phone', phone.toString());
+    }
+    if (data.get('fullName')) {
+      backendFormData.append('fullName', data.get('fullName')!.toString());
+    }
+    if (data.get('email')) {
+      backendFormData.append('email', data.get('email')!.toString());
     }
     if (file) {
       backendFormData.append('photo', file);
@@ -108,10 +166,24 @@ export const getOrCreateProfileByUserId = async (userId: number) => {
   } catch (error: any) {
     if (error.response?.status === 404) {
       console.log('🆕 No existe perfil, creando uno nuevo...');
+
+      // 🧠 Intentar recuperar los datos del usuario recién creado desde sessionStorage
+      let userData: any = {};
+      const storedCreatedUser = sessionStorage.getItem('lastCreatedUser');
+      if (storedCreatedUser) {
+        try {
+          userData = JSON.parse(storedCreatedUser);
+          console.log('📦 Datos del usuario recién creado recuperados:', userData);
+        } catch (e) {
+          console.warn('⚠️ Error al parsear lastCreatedUser:', e);
+        }
+      }
+
+      // Crear el perfil usando los datos del usuario nuevo si están disponibles
       const formData = new FormData();
-      formData.append('phone', '');
-      formData.append('fullName', '');
-      formData.append('email', ''); // para el backend
+      formData.append('phone', userData.phone || '');
+      formData.append('fullName', userData.name || 'Usuario sin nombre');
+      formData.append('email', userData.email || '');
 
       const { data: newProfile } = await axios.post(
         `${API_URL}/api/profiles/user/${userId}`,
@@ -119,7 +191,7 @@ export const getOrCreateProfileByUserId = async (userId: number) => {
         { headers: { 'Content-Type': 'multipart/form-data' } },
       );
 
-      console.log('✅ Perfil creado automáticamente:', newProfile);
+      console.log('✅ Perfil creado automáticamente con datos del usuario:', newProfile);
       return ProfileAdapter.toFrontendModel(newProfile);
     }
 

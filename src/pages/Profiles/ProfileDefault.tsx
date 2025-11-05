@@ -15,40 +15,40 @@ const ProfileDefault = () => {
   // ✅ Obtener el ID real del usuario logueado
   const currentUserId = localStorage.getItem('currentUserId');
 
-  useEffect(() => {
-    if (currentUserId) {
-      checkAndRedirect();
-    } else {
-      console.warn('⚠️ No se encontró currentUserId en localStorage');
-      setIsChecking(false);
-    }
-  }, [currentUserId]);
-
-  const checkAndRedirect = async () => {
-    try {
-      const exists = await checkProfileExists(Number(currentUserId));
-
-      if (exists) {
-        navigate(`/profile/${currentUserId}`, { replace: true });
-      } else {
-        navigate(`/profiles/create/${currentUserId}`, { replace: true });
-      }
-    } catch (error) {
-      console.error('Error al verificar perfil:', error);
-      setIsChecking(false);
-    }
-  };
-
-  if (isChecking && currentUserId) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando perfil...</p>
-        </div>
-      </div>
-    );
+ useEffect(() => {
+  const storedId = localStorage.getItem('currentUserId');
+  if (!storedId) {
+    console.warn('⚠️ No hay usuario autenticado en localStorage');
+    setIsChecking(false);
+    return;
   }
+
+  // 🔒 Convertir a número y asegurar que no sea NaN
+  const idNum = Number(storedId);
+  if (isNaN(idNum)) {
+    console.error('⚠️ currentUserId inválido en localStorage');
+    setIsChecking(false);
+    return;
+  }
+
+  // ✅ Guardar ID autenticado fijo
+  checkAndRedirect(idNum);
+}, []);
+
+  const checkAndRedirect = async (idNum: number) => {
+  try {
+    const exists = await checkProfileExists(idNum);
+
+    if (exists) {
+      navigate(`/profile/${idNum}`, { replace: true });
+    } else {
+      navigate(`/profiles/create/${idNum}`, { replace: true });
+    }
+  } catch (error) {
+    console.error('Error al verificar perfil:', error);
+    setIsChecking(false);
+  }
+};
 
   // Si no hay usuario logueado o no se detectó ID
   return (

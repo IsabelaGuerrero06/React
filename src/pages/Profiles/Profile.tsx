@@ -30,13 +30,36 @@ const Profile = () => {
         let data = await getProfileByUserId(Number(id));
         console.log('📦 Datos recibidos del backend:', data);
 
-        // ✅ Ajustamos el email: si no viene del backend, lo tomamos del localStorage
-        if (!data.email) {
+        // ✅ Solo usar el email del localStorage si el perfil pertenece al usuario autenticado
+        const currentUserId = localStorage.getItem('currentUserId');
+
+        if (
+          !data.email &&
+          currentUserId &&
+          Number(currentUserId) === Number(id)
+        ) {
           const storedUser = localStorage.getItem('user');
           data.email =
             storedUser && JSON.parse(storedUser).email
               ? JSON.parse(storedUser).email
               : 'No especificado';
+        }
+
+        // 🧩 NUEVO BLOQUE: usar datos del último usuario creado si el backend devolvió vacío
+        if (!data.fullName || data.fullName === 'Usuario sin nombre') {
+          const lastCreatedUser = sessionStorage.getItem('lastCreatedUser');
+          if (lastCreatedUser) {
+            try {
+              const parsed = JSON.parse(lastCreatedUser);
+              if (parsed?.id === Number(id)) {
+                data.fullName = parsed.name || data.fullName;
+                data.email = parsed.email || data.email;
+                console.log('♻️ Datos del perfil completados desde sessionStorage:', parsed);
+              }
+            } catch (e) {
+              console.warn('⚠️ Error al leer lastCreatedUser en Profile.tsx:', e);
+            }
+          }
         }
 
         setProfile(data);

@@ -6,6 +6,7 @@ import { userService } from "../../services/userService";
 import { createProfile } from "../../services/ProfileService";
 import { deviceService } from "../../services/deviceService";
 import { User } from "../../models/User";
+import { authenticatedUserService } from "../../services/authenticatedUserService";
 
 const CreateUser: React.FC = () => {
   const navigate = useNavigate();
@@ -31,10 +32,24 @@ const CreateUser: React.FC = () => {
     let userId: number | null = null;
 
     try {
+      // 🔒 GUARDAR USUARIO AUTENTICADO ANTES DE CREAR NUEVO USUARIO
+      const authenticatedUser = localStorage.getItem("user");
+      const authenticatedUserId = localStorage.getItem("currentUserId");
+
+      console.log("👤 Usuario autenticado guardado:", {
+        authenticatedUser,
+        authenticatedUserId,
+      });
+
       // 1️⃣ Crear usuario
       const createdUser = await userService.createUser(data as User);
-      if (!createdUser?.id) throw new Error("User creation failed - no ID returned");
+      if (!createdUser?.id)
+        throw new Error("User creation failed - no ID returned");
       userId = createdUser.id;
+
+      console.log("✅ Nuevo usuario creado:", createdUser);
+      // 💾 Guardar en sessionStorage para vincular el perfil luego
+      sessionStorage.setItem("lastCreatedUser", JSON.stringify(createdUser));
 
       // 2️⃣ Crear perfil
       const formData = new FormData();
@@ -44,35 +59,21 @@ const CreateUser: React.FC = () => {
       formData.append("phone", phone);
 
       const profile = await createProfile(userId, formData);
+      console.log("✅ Perfil creado para nuevo usuario:", profile);
 
-      // ✅ Guardar en localStorage (igual que hacía tu primer archivo)
-      const userLocal = {
-        id: createdUser.id,
-        name: createdUser.name ?? "",
-        email:
-          createdUser.email ??
-          (profile && (profile as any).email) ??
-          "No especificado",
-        avatarUrl:
-          createdUser.avatarUrl ??
-          (profile && ((profile as any).avatarUrl || (profile as any).avatar)) ??
-          "", // compatibilidad con ambos nombres
-        profile,
-      };
+      // ⚠️ NO GUARDAR EN LOCALSTORAGE - ESTO SOBRESCRIBE AL USUARIO AUTENTICADO
+      // ❌ ELIMINADO: localStorage.setItem('user', ...)
+      // ❌ ELIMINADO: localStorage.setItem('profile', ...)
+      // ❌ ELIMINADO: window.dispatchEvent(new CustomEvent('user-changed', ...))
 
-      try {
-        localStorage.setItem("user", JSON.stringify(userLocal));
-        if (profile) localStorage.setItem("profile", JSON.stringify(profile));
-      } catch (err) {
-        console.warn("No se pudo escribir en localStorage:", err);
+      // 🔒 RESTAURAR USUARIO AUTENTICADO
+      if (authenticatedUser) {
+        localStorage.setItem("user", authenticatedUser);
+        console.log("🔄 Usuario autenticado restaurado");
       }
-
-      // 🔄 Emitir evento para actualizar vista sin recargar
-      try {
-        const ev = new CustomEvent("user-changed", { detail: userLocal });
-        window.dispatchEvent(ev);
-      } catch (err) {
-        console.warn("No se pudo despachar evento user-changed:", err);
+      if (authenticatedUserId) {
+        localStorage.setItem("currentUserId", authenticatedUserId);
+        console.log("🔄 currentUserId restaurado:", authenticatedUserId);
       }
 
       // 3️⃣ Crear dispositivo (sin bloquear si falla)
@@ -102,8 +103,9 @@ const CreateUser: React.FC = () => {
 
       try {
         await deviceService.createDevice(deviceData);
+        console.log("✅ Dispositivo creado para nuevo usuario");
       } catch (err) {
-        console.warn("Device creation failed (continuing):", err);
+        console.warn("⚠️ Device creation failed (continuing):", err);
       }
 
       // ✅ Éxito total
@@ -114,12 +116,22 @@ const CreateUser: React.FC = () => {
         timer: 2000,
       });
 
+      // ✅ Navegar primero
       navigate("/users/list");
+
+      // 🕒 Luego limpiar después de unos segundos
+      setTimeout(() => {
+        sessionStorage.removeItem("lastCreatedUser");
+        console.log("🧹 lastCreatedUser eliminado tras 5s");
+      }, 5000);
     } catch (error) {
-      console.error("Error en creación de usuario:", error);
+      console.error("❌ Error en creación de usuario:", error);
       Swal.fire({
         title: "Error",
-        text: error instanceof Error ? error.message : "Ocurrió un error inesperado",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Ocurrió un error inesperado",
         icon: "error",
       });
     }
