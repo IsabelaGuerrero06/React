@@ -23,6 +23,9 @@ import ListDevicesByUser from '../pages/Devices/ListDeviceByUser';
 import UpdateDevice from '../pages/Devices/UpdateDevice';
 import CreateDevice from '../pages/Devices/CreateDevice';
 import ViewDevice from '../pages/Devices/ViewDevice';
+import ViewDigitalSignature from '../pages/DigitalSignature/ViewDigitalSignature';
+import CreateDigitalSignature from '../pages/DigitalSignature/CreateDigitalSignature';
+import UpdateDigitalSignature from '../pages/DigitalSignature/UpdateDigitalSignature';
 import CreatePermission from '../pages/Permissions/CreatePermission';
 import UpdatePermission from '../pages/Permissions/UpdatePermission';
 
@@ -65,6 +68,22 @@ const authRoutes = [
 ];
 
 const coreRoutes = [
+  // Digital Signature
+  {
+    path: '/digital-signatures/user/:userId',
+    title: 'List An Specific Digital Signature',
+    component: ViewDigitalSignature,
+  },
+  {
+    path: '/digital-signatures/create/:userId',
+    title: 'Create Digital Signature',
+    component: CreateDigitalSignature,
+  },
+  {
+    path: '/digital-signatures/update/:id',
+    title: 'Update Digital Signature',
+    component: UpdateDigitalSignature,
+  },
   // Devices
   {
     path: '/devices/create',
