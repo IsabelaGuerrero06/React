@@ -124,7 +124,7 @@ const ListUsers: React.FC = () => {
     } else if (action === "address") {
       navigate(`/address/${userWithRole.id}`);
     } else if (action === "digitalSignature") {
-      navigate(`/digital-signature/${userWithRole.id}`);
+      navigate(`/digital-signatures/user/${userWithRole.id}`);
     } else if (action === "securityQuestions") {
       navigate(`/security-questions/list`);
     } else if (action === "answers") {

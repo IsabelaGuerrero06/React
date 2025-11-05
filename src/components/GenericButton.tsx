@@ -5,6 +5,7 @@ interface GenericButtonProps {
   onClick: () => void;
   variant?: "primary" | "secondary" | "danger" | "info" | "success";
   size?: "sm" | "md" | "lg";
+  disabled?: boolean;
 }
 
 const GenericButton: React.FC<GenericButtonProps> = ({
@@ -12,6 +13,7 @@ const GenericButton: React.FC<GenericButtonProps> = ({
   onClick,
   variant = "primary",
   size = "sm",
+  disabled = false,
 }) => {
   const baseStyle =
     "rounded-md font-medium transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 shadow-sm";
@@ -33,10 +35,15 @@ const GenericButton: React.FC<GenericButtonProps> = ({
     lg: "px-5 py-3 text-lg",
   };
 
+  const disabledStyle = "opacity-50 cursor-not-allowed";
+
   return (
     <button
-      onClick={onClick}
-      className={`${baseStyle} ${variantStyles[variant]} ${sizeStyles[size]}`}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      className={`${baseStyle} ${variantStyles[variant]} ${sizeStyles[size]} ${
+        disabled ? disabledStyle : ""
+      }`}
     >
       {label}
     </button>
