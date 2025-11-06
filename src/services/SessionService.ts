@@ -1,5 +1,6 @@
 // src/services/SessionService.ts
 
+import api from '../interceptors/axiosInterceptor'; // ✅ Añadido según solicitud
 import { Session, CreateSessionDTO, UpdateSessionDTO } from '../models/Session';
 import { SessionAdapter } from '../adapters/SessionAdapter';
 
@@ -42,26 +43,17 @@ export class SessionService {
     try {
       const url = `${this.baseURL}${this.endpoint}/user/${userId}`;
 
-      // DEBUG TEMPORAL
       console.log('🔗 URL construida:', url);
       console.log('🔧 baseURL:', this.baseURL);
       console.log('🔧 endpoint:', this.endpoint);
       console.log('👤 userId:', userId);
 
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: this.getHeaders(),
-      });
+      // ✅ Reemplazado fetch por api.get
+      const response = await api.get(url);
 
       console.log('📊 Status HTTP:', response.status);
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Error del servidor:', errorText);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = response.data;
       console.log('📦 Datos crudos del backend:', data);
 
       if (Array.isArray(data)) {
@@ -84,16 +76,11 @@ export class SessionService {
   async getById(sessionId: string): Promise<Session> {
     try {
       const url = `${this.baseURL}${this.endpoint}/${sessionId}`;
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: this.getHeaders(),
-      });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      // ✅ Reemplazado fetch por api.get
+      const response = await api.get(url);
 
-      const data = await response.json();
+      const data = response.data;
       console.log('Sesiones crudas del backend:', data);
       return SessionAdapter.fromBackend(data);
     } catch (error) {
@@ -115,28 +102,20 @@ export class SessionService {
     data: CreateSessionDTO,
   ): Promise<Session> {
     try {
-      // Convertir expiration de string a Date si es necesario
       const normalizedData = {
         ...data,
         expiration: data.expiration ? new Date(data.expiration) : undefined,
       };
 
-      // Transformar datos al formato del backend
       const backendPayload = SessionAdapter.toBackendCreate(normalizedData);
 
       const url = `${this.baseURL}${this.endpoint}/user/${userId}`;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify(backendPayload),
-      });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      // ✅ Reemplazado fetch por api.post
+      const response = await api.post(url, backendPayload);
 
-      const responseData = await response.json();
-      console.log('Sesiones crudas del backend:', data);
+      const responseData = response.data;
+      console.log('Sesiones crudas del backend:', responseData);
       return SessionAdapter.fromBackend(responseData);
     } catch (error) {
       console.error(`Error creando sesión para usuario ${userId}:`, error);
@@ -157,7 +136,6 @@ export class SessionService {
     data: UpdateSessionDTO,
   ): Promise<Session> {
     try {
-      // Convertir expiration de string a Date si es necesario
       const normalizedData = {
         ...data,
         expiration: data.expiration ? new Date(data.expiration) : undefined,
@@ -166,18 +144,12 @@ export class SessionService {
       const backendPayload = SessionAdapter.toBackendUpdate(normalizedData);
 
       const url = `${this.baseURL}${this.endpoint}/${sessionId}`;
-      const response = await fetch(url, {
-        method: 'PUT',
-        headers: this.getHeaders(),
-        body: JSON.stringify(backendPayload),
-      });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      // ✅ Reemplazado fetch por api.put
+      const response = await api.put(url, backendPayload);
 
-      const responseData = await response.json();
-      console.log('Sesiones crudas del backend:', data);
+      const responseData = response.data;
+      console.log('Sesiones crudas del backend:', responseData);
       return SessionAdapter.fromBackend(responseData);
     } catch (error) {
       console.error(`Error actualizando sesión ${sessionId}:`, error);
@@ -195,14 +167,9 @@ export class SessionService {
   async closeSession(sessionId: string): Promise<void> {
     try {
       const url = `${this.baseURL}${this.endpoint}/${sessionId}`;
-      const response = await fetch(url, {
-        method: 'DELETE',
-        headers: this.getHeaders(),
-      });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      // ✅ Reemplazado fetch por api.delete
+      await api.delete(url);
     } catch (error) {
       console.error(`Error cerrando sesión ${sessionId}:`, error);
       throw new Error(`No se pudo cerrar la sesión: ${error}`);
@@ -220,10 +187,7 @@ export class SessionService {
    */
   async closeAllSessions(userId: number): Promise<void> {
     try {
-      // Obtener todas las sesiones del usuario
       const sessions = await this.getByUserId(userId);
-
-      // Cerrar cada sesión individualmente (secuencialmente para evitar rate limiting)
       for (const session of sessions) {
         await this.closeSession(session.id);
       }
@@ -246,8 +210,6 @@ export class SessionService {
   async getActiveSessions(userId: number): Promise<Session[]> {
     try {
       const allSessions = await this.getByUserId(userId);
-
-      // Filtrar solo sesiones válidas usando el adapter
       return allSessions.filter((session) => {
         const validation = SessionAdapter.validateSession(session);
         return validation.isValid;
@@ -261,18 +223,11 @@ export class SessionService {
     }
   }
 
-  /**
-   * Método auxiliar para obtener headers
-   * Sobrescribe este método si necesitas agregar autenticación
-   */
   protected getHeaders(): HeadersInit {
     return {
       'Content-Type': 'application/json',
-      // Agregar token de autenticación si es necesario
-      // 'Authorization': `Bearer ${getAuthToken()}`
     };
   }
 }
 
-// Exportar instancia singleton
 export const sessionService = new SessionService();

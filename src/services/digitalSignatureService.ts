@@ -1,6 +1,7 @@
 // src/services/digitalSignatureService.ts
 import axios from "axios";
 import { DigitalSignature } from "../models/DigitalSignature";
+import api from '../interceptors/axiosInterceptor';
 
 const API_URL = `${import.meta.env.VITE_API_URL}/api/digital-signatures`;
 
@@ -8,7 +9,7 @@ class DigitalSignatureService {
   // Obtener todas las firmas digitales
   async getAll(): Promise<DigitalSignature[]> {
     try {
-      const response = await axios.get(`${API_URL}/`);
+      const response = await api.get(`${API_URL}/`);
       return response.data;
     } catch (error) {
       console.error("Error al obtener firmas digitales:", error);
@@ -19,7 +20,7 @@ class DigitalSignatureService {
   // Obtener una firma digital por ID
   async getById(id: number): Promise<DigitalSignature | null> {
     try {
-      const response = await axios.get(`${API_URL}/${id}`);
+      const response = await api.get(`${API_URL}/${id}`);
       return response.data;
     } catch (error) {
       console.error("Error al obtener firma digital por ID:", error);
@@ -30,7 +31,7 @@ class DigitalSignatureService {
   // Obtener firma digital por usuario
   async getByUserId(userId: number): Promise<DigitalSignature | null> {
     try {
-      const response = await axios.get(`${API_URL}/user/${userId}`);
+      const response = await api.get(`${API_URL}/user/${userId}`);
       return response.data;
     } catch (error) {
       console.error("Error al obtener firma digital por usuario:", error);
@@ -44,7 +45,7 @@ class DigitalSignatureService {
       const formData = new FormData();
       formData.append('photo', photoFile);
 
-      const response = await axios.post(`${API_URL}/user/${userId}`, formData, {
+      const response = await api.post(`${API_URL}/user/${userId}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

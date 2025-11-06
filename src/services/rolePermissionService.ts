@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { RolePermission, CreateRolePermissionDTO, UpdateRolePermissionDTO, BulkRolePermissionDTO } from '../models/RolePermission';
 import securityService from './securityService';
+import api from '../interceptors/axiosInterceptor';
 
 class RolePermissionService {
     private readonly baseURL: string;
@@ -18,35 +19,35 @@ class RolePermissionService {
     }
 
     async getAll(): Promise<RolePermission[]> {
-        const response = await axios.get(`${this.baseURL}/role-permissions`, {
+        const response = await api.get(`${this.baseURL}/role-permissions`, {
             headers: this.getHeaders()
         });
         return response.data;
     }
 
     async getById(id: string): Promise<RolePermission> {
-        const response = await axios.get(`${this.baseURL}/role-permissions/${id}`, {
+        const response = await api.get(`${this.baseURL}/role-permissions/${id}`, {
             headers: this.getHeaders()
         });
         return response.data;
     }
 
     async getByRoleId(roleId: number): Promise<RolePermission[]> {
-        const response = await axios.get(`${this.baseURL}/role-permissions/role/${roleId}`, {
+        const response = await api.get(`${this.baseURL}/role-permissions/role/${roleId}`, {
             headers: this.getHeaders()
         });
         return response.data;
     }
 
     async getByPermissionId(permissionId: number): Promise<RolePermission[]> {
-        const response = await axios.get(`${this.baseURL}/role-permissions/permission/${permissionId}`, {
+        const response = await api.get(`${this.baseURL}/role-permissions/permission/${permissionId}`, {
             headers: this.getHeaders()
         });
         return response.data;
     }
 
     async create(roleId: number, permissionId: number): Promise<RolePermission> {
-        const response = await axios.post(
+        const response = await api.post(
             `${this.baseURL}/role-permissions/role/${roleId}/permission/${permissionId}`, 
             {},
             { headers: this.getHeaders() }

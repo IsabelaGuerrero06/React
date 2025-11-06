@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { Profile } from '../models/Profile';
+import api from '../interceptors/axiosInterceptor';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -149,7 +150,7 @@ class ProfileAdapter {
 // GET /api/profiles/user/{userId}
 export const getProfileByUserId = async (userId: number): Promise<Profile> => {
   try {
-    const response = await axios.get(`${API_URL}/api/profiles/user/${userId}`);
+    const response = await api.get(`${API_URL}/api/profiles/user/${userId}`);
     return ProfileAdapter.toFrontendModel(response.data);
   } catch (error) {
     console.error('❌ Error al obtener el perfil:', error);
@@ -160,7 +161,7 @@ export const getProfileByUserId = async (userId: number): Promise<Profile> => {
 // 🆕 NUEVA FUNCIÓN: obtiene el perfil o lo crea si no existe
 export const getOrCreateProfileByUserId = async (userId: number) => {
   try {
-    const { data } = await axios.get(`${API_URL}/api/profiles/user/${userId}`);
+    const { data } = await api.get(`${API_URL}/api/profiles/user/${userId}`);
     console.log('✅ Perfil encontrado en backend:', data);
     return ProfileAdapter.toFrontendModel(data);
   } catch (error: any) {
@@ -185,7 +186,7 @@ export const getOrCreateProfileByUserId = async (userId: number) => {
       formData.append('fullName', userData.name || 'Usuario sin nombre');
       formData.append('email', userData.email || '');
 
-      const { data: newProfile } = await axios.post(
+      const { data: newProfile } = await api.post(
         `${API_URL}/api/profiles/user/${userId}`,
         formData,
         { headers: { 'Content-Type': 'multipart/form-data' } },
@@ -203,7 +204,7 @@ export const getOrCreateProfileByUserId = async (userId: number) => {
 // GET /api/profiles/{profileId}
 export const getProfileById = async (profileId: number): Promise<Profile> => {
   try {
-    const response = await axios.get(`${API_URL}/api/profiles/${profileId}`);
+    const response = await api.get(`${API_URL}/api/profiles/${profileId}`);
     return ProfileAdapter.toFrontendModel(response.data);
   } catch (error) {
     console.error('❌ Error al obtener el perfil:', error);

@@ -1,4 +1,5 @@
 import axios from "axios";
+import api from "../interceptors/axiosInterceptor";
 import { User } from "../models/User";
 
 const API_URL = `${import.meta.env.VITE_API_URL}/api/users`;
@@ -7,7 +8,8 @@ const API_URL = `${import.meta.env.VITE_API_URL}/api/users`;
 class UserService {
     async getUsers(): Promise<User[]> {
         try {
-            const response = await axios.get<User[]>(API_URL);
+            // ✅ Usa 'api' en lugar de 'axios'
+            const response = await api.get<User[]>(API_URL);
             return response.data;
         } catch (error) {
             console.error("Error al obtener usuarios:", error);
@@ -17,7 +19,7 @@ class UserService {
 
     async getUserById(id: number): Promise<User | null> {
         try {
-            const response = await axios.get<User>(`${API_URL}/${id}`);
+            const response = await api.get<User>(`${API_URL}/${id}`);
             return response.data;
         } catch (error) {
             console.error("Usuario no encontrado:", error);
@@ -27,7 +29,7 @@ class UserService {
 
     async createUser(user: Omit<User, "id">): Promise<User | null> {
         try {
-            const response = await axios.post<User>(API_URL, user);
+            const response = await api.post<User>(API_URL, user);
             return response.data;
         } catch (error) {
             console.error("Error al crear usuario:", error);
@@ -37,7 +39,7 @@ class UserService {
 
     async updateUser(id: number, user: Partial<User>): Promise<User | null> {
         try {
-            const response = await axios.put<User>(`${API_URL}/${id}`, user);
+            const response = await api.put<User>(`${API_URL}/${id}`, user);
             return response.data;
         } catch (error) {
             console.error("Error al actualizar usuario:", error);
@@ -47,7 +49,7 @@ class UserService {
 
     async deleteUser(id: number): Promise<boolean> {
         try {
-            await axios.delete(`${API_URL}/${id}`);
+            await api.delete(`${API_URL}/${id}`);
             return true;
         } catch (error) {
             console.error("Error al eliminar usuario:", error);
