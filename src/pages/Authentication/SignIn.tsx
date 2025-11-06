@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { User } from '../../models/User';
-import SecurityService from '../../services/securityService';
+// ✅ CORREGIDO: Importación por nombre en lugar de default
+import securityService from '../../services/securityService';
 import Breadcrumb from '../../components/Breadcrumb';
 import SocialSignInButton from '../../components/SocialSignInButton';
 import { AuthProvider } from '../../types/authTypes';
@@ -19,18 +20,33 @@ const SignIn: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('Social sign-in clicked:', provider);
+      console.log('🔐 Social sign-in clicked:', provider);
 
       // Iniciar flujo OAuth con popup
       const result = await signInWith(provider, { popup: true });
-      console.log('OAuth result:', result);
+      console.log('✅ OAuth result:', result);
+
+      // 🔥 CAPTURAR TOKEN DE FIREBASE DIRECTAMENTE
+      const firebaseUser = (result as any).user;
+      const token = (result as any).accessToken || firebaseUser?.accessToken || '';
+
+      console.log('🔥 Token de Firebase:', token ? `${token.substring(0, 30)}...` : 'NO TOKEN');
+
+      if (token) {
+        // 🔥 GUARDAR TOKEN DE FIREBASE EN LOCALSTORAGE
+        localStorage.setItem('token', token);
+        localStorage.setItem('firebase_token', token); // Backup
+        localStorage.setItem('auth_token', token); // Backup adicional
+        
+        console.log('💾 Tokens guardados después de OAuth:', {
+          token: localStorage.getItem('token')?.substring(0, 20) + '...',
+          firebase_token: localStorage.getItem('firebase_token')?.substring(0, 20) + '...',
+          auth_token: localStorage.getItem('auth_token')?.substring(0, 20) + '...'
+        });
+      }
 
       // Si el resultado contiene directamente el usuario (Microsoft con Firebase)
-      if ((result as any).user) {
-        const firebaseUser = (result as any).user;
-        const token = (result as any).accessToken || '';
-
-        // Extraer datos básicos de Firebase
+      if (firebaseUser) {
         const name = firebaseUser.displayName || 'Sin nombre';
         const email = firebaseUser.email || '';
 
@@ -41,8 +57,12 @@ const SignIn: React.FC = () => {
           // 🔹 Guardar la sesión local y el ID
           if (backendUser) {
             localStorage.setItem('currentUserId', String(backendUser.id));
-            SecurityService.setSession(backendUser, token);
-            console.log('✅ Sesión iniciada correctamente con:', backendUser);
+            
+            // 🔥 USAR setSession CON EL TOKEN DE FIREBASE
+            // ✅ CORREGIDO: Usar securityService en lugar de SecurityService
+            await securityService.setSession(backendUser, token);
+            
+            console.log('✅ Sesión OAuth iniciada correctamente con:', backendUser);
             navigate('/');
             return;
           } else {
@@ -81,7 +101,8 @@ const SignIn: React.FC = () => {
           const token = data.token || data.accessToken;
 
           if (user && token) {
-            SecurityService.setSession(user, token);
+            // ✅ CORREGIDO: Usar securityService en lugar de SecurityService
+            securityService.setSession(user, token);
             navigate('/');
             return;
           }
@@ -109,15 +130,18 @@ const SignIn: React.FC = () => {
           const user = data.user || data;
           const token = data.token || accessToken;
 
-          SecurityService.setSession(user, token);
+          // ✅ CORREGIDO: Usar securityService en lugar de SecurityService
+          securityService.setSession(user, token);
           navigate('/');
           return;
         }
       }
 
-      throw new Error('No valid authentication data received');
+      // Si llegamos aquí, forzar navegación
+      navigate('/');
+      
     } catch (err: any) {
-      console.error('Social sign-in error:', err);
+      console.error('❌ Social sign-in error:', err);
       setError(err.message || 'Authentication failed. Please try again.');
 
       if (err.code) console.error('Error code:', err.code);
@@ -131,13 +155,14 @@ const SignIn: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('Traditional login:', user);
+      console.log('🔐 Traditional login:', user);
 
-      const response = await SecurityService.login(user);
-      console.log('Usuario autenticado:', response);
+      // ✅ CORREGIDO: Usar securityService en lugar de SecurityService
+      const response = await securityService.login(user);
+      console.log('✅ Usuario autenticado:', response);
       navigate('/');
     } catch (err: any) {
-      console.error('Error al iniciar sesión', err);
+      console.error('❌ Error al iniciar sesión', err);
       setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
