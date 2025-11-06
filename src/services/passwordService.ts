@@ -23,19 +23,21 @@ class PasswordService {
     return items.filter((p) => p.userId === userId);
   }
 
-  async createPassword(userId: number, cont: string): Promise<Password> {
+  async createPassword(
+    userId: number, 
+    cont: string, 
+    startAt: string, 
+    endAt: string
+  ): Promise<Password> {
     const items = this.loadAll();
     const nextId = items.length > 0 ? Math.max(...items.map((i) => i.id)) + 1 : 1;
-    const start = new Date();
-    // Asumimos endAt automático a 90 días después de startAt (ajustable)
-    const end = new Date(start.getTime() + 90 * 24 * 60 * 60 * 1000);
 
     const newPassword: Password = {
       id: nextId,
       userId,
       cont,
-      startAt: start.toISOString(),
-      endAt: end.toISOString(),
+      startAt: startAt, // Ahora usa la fecha proporcionada
+      endAt: endAt,     // Ahora usa la fecha proporcionada
     };
 
     items.push(newPassword);
