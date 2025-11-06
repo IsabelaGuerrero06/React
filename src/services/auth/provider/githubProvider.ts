@@ -7,72 +7,124 @@ import {
   ProviderOptions,
 } from '../../../types/authTypes';
 import { BaseAuthProvider } from './baseProvider';
+import { oauthSessionSync } from '../OAuthSessionSyncService';
+import {
+  signInWithPopup,
+  signOut,
+  GithubAuthProvider as FirebaseGithubProvider,
+} from 'firebase/auth';
+import { auth, githubProvider } from '../../../config/firebaseConfig';
+
+// 👇 Importamos el servicio del backend
+import { userService } from '../../../services/userService';
+import securityService from '../../../services/securityService';
+import { User } from '../../../models/User';
 
 export class GitHubAuthProvider extends BaseAuthProvider {
   readonly provider = AuthProvider.GITHUB;
   readonly config: OAuthConfig;
 
-  private readonly AUTH_ENDPOINT = 'https://github.com/login/oauth/authorize';
-  private readonly TOKEN_ENDPOINT = 'https://github.com/login/oauth/access_token';
-  private readonly USER_ENDPOINT = 'https://api.github.com/user';
-  private readonly EMAIL_ENDPOINT = 'https://api.github.com/user/emails';
-
   constructor(config: OAuthConfig) {
     super();
-    this.config = {
-      responseType: 'code',
-      scope: ['read:user', 'user:email'],
-      ...config,
-    };
+    this.config = config;
   }
 
   async initialize(): Promise<void> {
     if (this.initialized) return;
-    try {
-      console.log('GitHub OAuth provider initialized');
-      this.initialized = true;
-    } catch (error) {
-      throw this.handleError(error);
-    }
+    console.log('🔥 GitHub OAuth provider initialized with Firebase');
+    this.initialized = true;
   }
 
   async signIn(options?: ProviderOptions): Promise<OAuthResult> {
     try {
       await this.initialize();
-      const state = options?.state || this.generateState();
-      sessionStorage.setItem('oauth_state', state);
 
-      const params = {
-        client_id: this.config.clientId,
-        redirect_uri: this.config.redirectUri,
-        scope: this.config.scope?.join(' ') || 'read:user user:email',
-        state,
-        allow_signup: 'true',
-      } as Record<string, string>;
+      console.log('🚀 Starting GitHub sign-in with Firebase popup...');
+      
+      const result = await signInWithPopup(auth, githubProvider);
+      const firebaseUser = result.user;
+      const credential = FirebaseGithubProvider.credentialFromResult(result);
 
-      const authUrl = this.buildAuthUrl(this.AUTH_ENDPOINT, params);
+      this.accessToken = credential?.accessToken || null;
 
-      if (options?.popup) {
-        const popup = this.openPopup(authUrl, 'GitHub Sign In');
-        if (!popup) throw new Error('Failed to open popup window');
-        return await this.waitForPopupResult(popup);
+      console.log('✅ GitHub Firebase auth successful:', {
+        userId: firebaseUser.uid,
+        email: firebaseUser.email,
+        name: firebaseUser.displayName
+      });
+
+      // Extraer datos del usuario
+      const name: string = firebaseUser.displayName || 'Usuario GitHub';
+      const email: string = firebaseUser.email || `${firebaseUser.uid}@github.com`;
+
+      if (!email) {
+        throw new Error('No se pudo obtener el email del usuario de GitHub');
       }
 
-      window.location.href = authUrl;
-      return new Promise(() => {});
-    } catch (error) {
+      // 🔧 Crear o recuperar usuario en el backend
+      const backendUser = await userService.createIfNotExists(name, email);
+
+      if (!backendUser || !backendUser.id) {
+        throw new Error('❌ No se pudo crear o recuperar el usuario del backend');
+      }
+
+      console.log('✅ Usuario backend:', backendUser);
+
+      // Guardar datos en localStorage
+      localStorage.setItem('currentUserId', backendUser.id.toString());
+      localStorage.setItem('user', JSON.stringify(backendUser));
+
+      // 🔧 Sincronizar sesión OAuth (solo si tenemos accessToken)
+      if (this.accessToken) {
+        try {
+          await oauthSessionSync.syncOAuthSession(backendUser.id, this.accessToken);
+        } catch (syncError) {
+          console.error('⚠️ Error sincronizando sesión OAuth:', syncError);
+        }
+      }
+
+      // Establecer sesión en securityService
+      securityService.setSession(backendUser, this.accessToken || '');
+
+      // 🔧 Return explícito y correcto
+      return {
+        user: {
+          id: backendUser.id.toString(),
+          email: backendUser.email || email,
+          name: backendUser.name || name,
+          picture: firebaseUser.photoURL || '',
+        },
+        accessToken: this.accessToken,
+        provider: this.provider,
+      } as OAuthResult;
+
+    } catch (error: any) {
+      console.error('❌ GitHub sign-in error:', error);
+      
+      if (error.code === 'auth/popup-closed-by-user') {
+        throw new Error('Sign-in cancelled by user');
+      }
+      if (error.code === 'auth/popup-blocked') {
+        throw new Error('Popup blocked by browser. Please allow popups.');
+      }
+      if (error.code === 'auth/account-exists-with-different-credential') {
+        throw new Error('An account already exists with this email using a different sign-in method.');
+      }
+      
       throw this.handleError(error);
     }
   }
 
   async signOut(): Promise<void> {
     try {
+      await signOut(auth);
       this.accessToken = null;
-      sessionStorage.removeItem('oauth_state');
-      sessionStorage.removeItem('refresh_token');
-      console.log('GitHub sign out successful');
+      // Limpiar localStorage
+      localStorage.removeItem('currentUserId');
+      localStorage.removeItem('user');
+      console.log('✅ GitHub sign out successful');
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('❌ Error signing out:', error);
       throw this.handleError(error);
     }
   }
@@ -86,76 +138,14 @@ export class GitHubAuthProvider extends BaseAuthProvider {
   }
 
   async refreshToken(): Promise<string | null> {
-    throw new Error('GitHub OAuth does not support refresh tokens');
+    return null; // Firebase maneja esto automáticamente
   }
 
   async exchangeCodeForToken(code: string): Promise<OAuthResult> {
-    try {
-      const response = await fetch(this.TOKEN_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({
-          client_id: this.config.clientId,
-          client_secret: '', // MUST be exchanged on backend in production
-          code,
-          redirect_uri: this.config.redirectUri,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error_description || 'Failed to exchange code for token');
-      }
-
-      const data = await response.json();
-      if (data.error) throw new Error(data.error_description || data.error);
-      this.accessToken = data.access_token;
-      return { accessToken: data.access_token };
-    } catch (error) {
-      throw this.handleError(error);
-    }
+    throw new Error('Not needed with Firebase popup flow');
   }
 
   async getUserInfo(accessToken: string): Promise<any> {
-    try {
-      const userResponse = await fetch(this.USER_ENDPOINT, {
-        headers: { Authorization: `Bearer ${accessToken}` , Accept: 'application/vnd.github.v3+json'},
-      });
-      if (!userResponse.ok) throw new Error('Failed to get user info');
-      const userData = await userResponse.json();
-
-      if (!userData.email) {
-        try {
-          const emailResponse = await fetch(this.EMAIL_ENDPOINT, {
-            headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/vnd.github.v3+json' },
-          });
-          if (emailResponse.ok) {
-            const emails = await emailResponse.json();
-            const primaryEmail = emails.find((e: any) => e.primary && e.verified);
-            if (primaryEmail) userData.email = primaryEmail.email;
-          }
-        } catch (emailError) {
-          console.warn('Failed to fetch user emails:', emailError);
-        }
-      }
-
-      return userData;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  async revokeAccess(accessToken: string): Promise<void> {
-    try {
-      const response = await fetch(`https://api.github.com/applications/${this.config.clientId}/token`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/vnd.github.v3+json' },
-        body: JSON.stringify({ access_token: accessToken }),
-      });
-      if (!response.ok) throw new Error('Failed to revoke access');
-      console.log('GitHub access revoked successfully');
-    } catch (error) {
-      throw this.handleError(error);
-    }
+    throw new Error('User info already included in Firebase result');
   }
 }
